@@ -1,5 +1,5 @@
-defmodule MyappWeb.PageControllerTest do
-  use MyappWeb.ConnCase
+defmodule PatternVmWeb.PageControllerTest do
+  use PatternVmWeb.ConnCase
 
   test "GET /", %{conn: conn} do
     conn = get(conn, ~p"/")

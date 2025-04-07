@@ -40,7 +40,8 @@ defmodule PatternVM.Composite do
      }}
   end
 
-  def handle_interaction(:create_component, %{id: id, name: name, type: type, data: data}, state) do
+  def handle_interaction(:create_component, %{id: id, name: name, type: type} = params, state) do
+    data = Map.get(params, :data, %{})
     component = Component.new(id, name, type, data)
     updated_composites = Map.put(state.composites, id, component)
     new_state = %{state | composites: updated_composites}

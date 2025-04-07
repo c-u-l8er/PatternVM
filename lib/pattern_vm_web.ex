@@ -1,12 +1,12 @@
-defmodule MyappWeb do
+defmodule PatternVmWeb do
   @moduledoc """
   The entrypoint for defining your web interface, such
   as controllers, components, channels, and so on.
 
   This can be used in your application as:
 
-      use MyappWeb, :controller
-      use MyappWeb, :html
+      use PatternVmWeb, :controller
+      use PatternVmWeb, :html
 
   The definitions below will be executed for every controller,
   component, etc, so keep them short and clean, focused
@@ -40,7 +40,7 @@ defmodule MyappWeb do
     quote do
       use Phoenix.Controller, formats: [:html, :json]
 
-      use Gettext, backend: MyappWeb.Gettext
+      use Gettext, backend: PatternVmWeb.Gettext
 
       import Plug.Conn
 
@@ -80,16 +80,16 @@ defmodule MyappWeb do
   defp html_helpers do
     quote do
       # Translation
-      use Gettext, backend: MyappWeb.Gettext
+      use Gettext, backend: PatternVmWeb.Gettext
 
       # HTML escaping functionality
       import Phoenix.HTML
       # Core UI components
-      import MyappWeb.CoreComponents
+      import PatternVmWeb.CoreComponents
 
       # Common modules used in templates
       alias Phoenix.LiveView.JS
-      alias MyappWeb.Layouts
+      alias PatternVmWeb.Layouts
 
       # Routes generation with the ~p sigil
       unquote(verified_routes())
@@ -99,9 +99,9 @@ defmodule MyappWeb do
   def verified_routes do
     quote do
       use Phoenix.VerifiedRoutes,
-        endpoint: MyappWeb.Endpoint,
-        router: MyappWeb.Router,
-        statics: MyappWeb.static_paths()
+        endpoint: PatternVmWeb.Endpoint,
+        router: PatternVmWeb.Router,
+        statics: PatternVmWeb.static_paths()
     end
   end
 

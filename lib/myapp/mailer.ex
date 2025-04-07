@@ -1,3 +1,3 @@
-defmodule Myapp.Mailer do
-  use Swoosh.Mailer, otp_app: :myapp
+defmodule PatternVm.Mailer do
+  use Swoosh.Mailer, otp_app: :pattern_vm
 end

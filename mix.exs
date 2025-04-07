@@ -1,9 +1,9 @@
-defmodule Myapp.MixProject do
+defmodule PatternVm.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :myapp,
+      app: :pattern_vm,
       version: "0.1.0",
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -19,7 +19,7 @@ defmodule Myapp.MixProject do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {Myapp.Application, []},
+      mod: {PatternVm.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -58,7 +58,8 @@ defmodule Myapp.MixProject do
       {:gettext, "~> 0.26"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
-      {:bandit, "~> 1.5"}
+      {:bandit, "~> 1.5"},
+      {:uuid, "~> 1.1"}
     ]
   end
 
@@ -75,10 +76,10 @@ defmodule Myapp.MixProject do
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-      "assets.build": ["tailwind myapp", "esbuild myapp"],
+      "assets.build": ["tailwind pattern_vm", "esbuild pattern_vm"],
       "assets.deploy": [
-        "tailwind myapp --minify",
-        "esbuild myapp --minify",
+        "tailwind pattern_vm --minify",
+        "esbuild pattern_vm --minify",
         "phx.digest"
       ]
     ]

@@ -1,4 +1,4 @@
-defmodule MyappWeb.CoreComponents do
+defmodule PatternVmWeb.CoreComponents do
   @moduledoc """
   Provides core UI components.
 
@@ -27,7 +27,7 @@ defmodule MyappWeb.CoreComponents do
 
   """
   use Phoenix.Component
-  use Gettext, backend: MyappWeb.Gettext
+  use Gettext, backend: PatternVmWeb.Gettext
 
   alias Phoenix.LiveView.JS
 
@@ -446,9 +446,9 @@ defmodule MyappWeb.CoreComponents do
     # with our gettext backend as first argument. Translations are
     # available in the errors.po file (as we use the "errors" domain).
     if count = opts[:count] do
-      Gettext.dngettext(MyappWeb.Gettext, "errors", msg, msg, count, opts)
+      Gettext.dngettext(PatternVmWeb.Gettext, "errors", msg, msg, count, opts)
     else
-      Gettext.dgettext(MyappWeb.Gettext, "errors", msg, opts)
+      Gettext.dgettext(PatternVmWeb.Gettext, "errors", msg, opts)
     end
   end
 
