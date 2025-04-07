@@ -18,7 +18,9 @@ PatternVM represents design patterns as modular components that can interact in 
 Demo:
 
 ```bash
-mix run examples/dsl_example.exs
+mix run examples/dsl_example.exs 2>&1 | tee dsl_example.stdout.txt
+
+mix run examples/complex_pattern_system.exs 2>&1 | tee complex_pattern_system.stdout.txt
 ```
 
 ## Installation

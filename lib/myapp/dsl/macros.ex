@@ -54,6 +54,13 @@ defmodule PatternVM.DSL do
     end
   end
 
+  # Helper to handle function references
+  defmacro function_ref(module, function, arity) do
+    quote do
+      {:function_ref, unquote(module), unquote(function), unquote(arity)}
+    end
+  end
+
   # Pattern-specific DSL constructs
 
   # Singleton Pattern
@@ -98,8 +105,35 @@ defmodule PatternVM.DSL do
   # Adapter Pattern
   defmacro adapter(name, adapters \\ quote(do: %{}), config \\ quote(do: %{})) do
     quote do
-      merged_config = Map.merge(unquote(config), %{adapters: unquote(adapters)})
+      # Convert function references in the adapters map to MFA tuples
+      processed_adapters =
+        for {k, v} <- unquote(adapters), into: %{} do
+          {k, represent_function(v)}
+        end
+
+      merged_config = Map.merge(unquote(config), %{adapters: processed_adapters})
       pattern(unquote(name), :adapter, merged_config)
+    end
+  end
+
+  # Helper macro to convert function references
+  defmacro represent_function(func) do
+    quote bind_quoted: [func: func] do
+      case func do
+        # If it's already a function reference tuple, return it
+        {:function_ref, _, _, _} = ref ->
+          ref
+
+        # Convert &Mod.fun/arity notation
+        {:&, _, [{:/, _, [{:., _, [{:__aliases__, _, mod}, fun]}, _, [arity]]}]} ->
+          module = Module.concat(mod)
+          {:function_ref, module, fun, arity}
+
+        # Handle anonymous functions by storing as strings to be evaluated later
+        # This is a simplified approach - won't work for complex anonymous functions
+        _ ->
+          {:function_src, Macro.to_string(func)}
+      end
     end
   end
 
