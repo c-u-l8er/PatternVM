@@ -1,4 +1,4 @@
-defmodule PatternVmWeb.Endpoint do
+defmodule PatternVMWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :pattern_vm
 
   # The session will be stored in the cookie and signed,
@@ -24,7 +24,7 @@ defmodule PatternVmWeb.Endpoint do
     at: "/",
     from: :pattern_vm,
     gzip: not code_reloading?,
-    only: PatternVmWeb.static_paths()
+    only: PatternVMWeb.static_paths()
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
@@ -50,5 +50,5 @@ defmodule PatternVmWeb.Endpoint do
   plug Plug.MethodOverride
   plug Plug.Head
   plug Plug.Session, @session_options
-  plug PatternVmWeb.Router
+  plug PatternVMWeb.Router
 end

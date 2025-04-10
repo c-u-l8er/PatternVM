@@ -1,12 +1,12 @@
-defmodule PatternVmWeb do
+defmodule PatternVMWeb do
   @moduledoc """
   The entrypoint for defining your web interface, such
   as controllers, components, channels, and so on.
 
   This can be used in your application as:
 
-      use PatternVmWeb, :controller
-      use PatternVmWeb, :html
+      use PatternVMWeb, :controller
+      use PatternVMWeb, :html
 
   The definitions below will be executed for every controller,
   component, etc, so keep them short and clean, focused
@@ -38,11 +38,12 @@ defmodule PatternVmWeb do
 
   def controller do
     quote do
-      use Phoenix.Controller, formats: [:html, :json]
-
-      use Gettext, backend: PatternVmWeb.Gettext
+      use Phoenix.Controller,
+        formats: [:html, :json],
+        layouts: [html: PatternVMWeb.Layouts]
 
       import Plug.Conn
+      import PatternVMWeb.Gettext
 
       unquote(verified_routes())
     end
@@ -50,7 +51,8 @@ defmodule PatternVmWeb do
 
   def live_view do
     quote do
-      use Phoenix.LiveView
+      use Phoenix.LiveView,
+        layout: {PatternVMWeb.Layouts, :app}
 
       unquote(html_helpers())
     end
@@ -79,17 +81,14 @@ defmodule PatternVmWeb do
 
   defp html_helpers do
     quote do
-      # Translation
-      use Gettext, backend: PatternVmWeb.Gettext
-
       # HTML escaping functionality
       import Phoenix.HTML
-      # Core UI components
-      import PatternVmWeb.CoreComponents
+      # Core UI components and translation
+      import PatternVMWeb.CoreComponents
+      import PatternVMWeb.Gettext
 
-      # Common modules used in templates
+      # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS
-      alias PatternVmWeb.Layouts
 
       # Routes generation with the ~p sigil
       unquote(verified_routes())
@@ -99,14 +98,14 @@ defmodule PatternVmWeb do
   def verified_routes do
     quote do
       use Phoenix.VerifiedRoutes,
-        endpoint: PatternVmWeb.Endpoint,
-        router: PatternVmWeb.Router,
-        statics: PatternVmWeb.static_paths()
+        endpoint: PatternVMWeb.Endpoint,
+        router: PatternVMWeb.Router,
+        statics: PatternVMWeb.static_paths()
     end
   end
 
   @doc """
-  When used, dispatch to the appropriate controller/live_view/etc.
+  When used, dispatch to the appropriate controller/view/etc.
   """
   defmacro __using__(which) when is_atom(which) do
     apply(__MODULE__, which, [])

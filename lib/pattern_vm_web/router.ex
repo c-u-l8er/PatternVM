@@ -1,11 +1,11 @@
-defmodule PatternVmWeb.Router do
-  use PatternVmWeb, :router
+defmodule PatternVMWeb.Router do
+  use PatternVMWeb, :router
 
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
-    plug :put_root_layout, html: {PatternVmWeb.Layouts, :root}
+    plug :put_root_layout, html: {PatternVMWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
   end
@@ -14,14 +14,14 @@ defmodule PatternVmWeb.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/", PatternVmWeb do
+  scope "/", PatternVMWeb do
     pipe_through :browser
 
     get "/", PageController, :home
   end
 
   # Other scopes may use custom stacks.
-  # scope "/api", PatternVmWeb do
+  # scope "/api", PatternVMWeb do
   #   pipe_through :api
   # end
 
@@ -37,7 +37,7 @@ defmodule PatternVmWeb.Router do
     scope "/dev" do
       pipe_through :browser
 
-      live_dashboard "/dashboard", metrics: PatternVmWeb.Telemetry
+      live_dashboard "/dashboard", metrics: PatternVMWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
   end

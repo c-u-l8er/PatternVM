@@ -1,7 +1,7 @@
 import Config
 
 # Configure your database
-config :pattern_vm, PatternVm.Repo,
+config :pattern_vm, PatternVM.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
@@ -16,7 +16,7 @@ config :pattern_vm, PatternVm.Repo,
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
-config :pattern_vm, PatternVmWeb.Endpoint,
+config :pattern_vm, PatternVMWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
   http: [ip: {127, 0, 0, 1}, port: 4000],
@@ -53,7 +53,7 @@ config :pattern_vm, PatternVmWeb.Endpoint,
 # different ports.
 
 # Watch static and templates for browser reloading.
-config :pattern_vm, PatternVmWeb.Endpoint,
+config :pattern_vm, PatternVMWeb.Endpoint,
   live_reload: [
     web_console_logger: true,
     patterns: [

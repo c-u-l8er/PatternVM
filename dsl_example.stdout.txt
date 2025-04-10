@@ -1,190 +1,190 @@
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/composite.ex:48
+  lib/pattern_vm/patterns/composite.ex:48
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/composite.ex:64
+  lib/pattern_vm/patterns/composite.ex:64
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/composite.ex:84
+  lib/pattern_vm/patterns/composite.ex:84
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/composite.ex:93
+  lib/pattern_vm/patterns/composite.ex:93
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/composite.ex:97
+  lib/pattern_vm/patterns/composite.ex:97
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/composite.ex:108
+  lib/pattern_vm/patterns/composite.ex:108
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/composite.ex:124
+  lib/pattern_vm/patterns/composite.ex:124
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/proxy.ex:20
+  lib/pattern_vm/patterns/proxy.ex:20
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/proxy.ex:28
+  lib/pattern_vm/patterns/proxy.ex:28
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/proxy.ex:47
+  lib/pattern_vm/patterns/proxy.ex:47
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/proxy.ex:64
+  lib/pattern_vm/patterns/proxy.ex:64
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/proxy.ex:73
+  lib/pattern_vm/patterns/proxy.ex:73
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/proxy.ex:82
+  lib/pattern_vm/patterns/proxy.ex:82
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/proxy.ex:92
+  lib/pattern_vm/patterns/proxy.ex:92
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/command.ex:23
+  lib/pattern_vm/patterns/command.ex:23
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/command.ex:34
+  lib/pattern_vm/patterns/command.ex:34
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/command.ex:43
+  lib/pattern_vm/patterns/command.ex:43
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/command.ex:53
+  lib/pattern_vm/patterns/command.ex:53
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/command.ex:67
+  lib/pattern_vm/patterns/command.ex:67
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/command.ex:76
+  lib/pattern_vm/patterns/command.ex:76
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/command.ex:86
+  lib/pattern_vm/patterns/command.ex:86
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/chain_of_responsibility.ex:33
+  lib/pattern_vm/patterns/chain_of_responsibility.ex:33
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/chain_of_responsibility.ex:50
+  lib/pattern_vm/patterns/chain_of_responsibility.ex:50
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/chain_of_responsibility.ex:59
+  lib/pattern_vm/patterns/chain_of_responsibility.ex:59
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/chain_of_responsibility.ex:72
+  lib/pattern_vm/patterns/chain_of_responsibility.ex:72
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/decorator.ex:18
+  lib/pattern_vm/patterns/decorator.ex:18
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/decorator.ex:36
+  lib/pattern_vm/patterns/decorator.ex:36
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/decorator.ex:44
+  lib/pattern_vm/patterns/decorator.ex:44
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/adapter.ex:18
+  lib/pattern_vm/patterns/adapter.ex:18
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/adapter.ex:27
+  lib/pattern_vm/patterns/adapter.ex:27
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/adapter.ex:36
+  lib/pattern_vm/patterns/adapter.ex:36
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/strategy.ex:11
+  lib/pattern_vm/patterns/strategy.ex:11
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/strategy.ex:20
+  lib/pattern_vm/patterns/strategy.ex:20
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/strategy.ex:29
+  lib/pattern_vm/patterns/strategy.ex:29
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/singleton.ex:11
+  lib/pattern_vm/patterns/singleton.ex:11
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/singleton.ex:27
+  lib/pattern_vm/patterns/singleton.ex:27
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/dsl/runtime.ex:28
+  lib/pattern_vm/dsl/runtime.ex:28
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/dsl/runtime.ex:109
+  lib/pattern_vm/dsl/runtime.ex:109
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/dsl/runtime.ex:128
+  lib/pattern_vm/dsl/runtime.ex:128
 
 warning: PatternVM.Supervisor.start_child/2 is undefined (module PatternVM.Supervisor is not available or is yet to be defined)
-  lib/myapp/dsl/runtime.ex:26
+  lib/pattern_vm/dsl/runtime.ex:26
 
 warning: PatternVM.Supervisor.start_child/2 is undefined (module PatternVM.Supervisor is not available or is yet to be defined)
-  lib/myapp/dsl/runtime.ex:58
+  lib/pattern_vm/dsl/runtime.ex:58
 
 warning: variable "message" is unused (if the variable is not meant to be used, prefix it with an underscore)
-  lib/myapp/patterns/observer.ex:44
+  lib/pattern_vm/patterns/observer.ex:44
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/observer.ex:20
+  lib/pattern_vm/patterns/observer.ex:20
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/observer.ex:38
+  lib/pattern_vm/patterns/observer.ex:38
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/observer.ex:53
+  lib/pattern_vm/patterns/observer.ex:53
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/observer.ex:64
+  lib/pattern_vm/patterns/observer.ex:64
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/builder.ex:32
+  lib/pattern_vm/patterns/builder.ex:32
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/patterns/factory.ex:16
+  lib/pattern_vm/patterns/factory.ex:16
 
 warning: UUID.uuid4/0 is undefined (module UUID is not available or is yet to be defined)
-  lib/myapp/patterns/factory.ex:22
+  lib/pattern_vm/patterns/factory.ex:22
 
 warning: UUID.uuid4/0 is undefined (module UUID is not available or is yet to be defined)
-  lib/myapp/patterns/factory.ex:26
+  lib/pattern_vm/patterns/factory.ex:26
 
 warning: UUID.uuid4/0 is undefined (module UUID is not available or is yet to be defined)
-  lib/myapp/patterns/factory.ex:30
+  lib/pattern_vm/patterns/factory.ex:30
 
 warning: PatternVM.Logger.log_interaction/3 is undefined (module PatternVM.Logger is not available or is yet to be defined)
-  lib/myapp/dsl/macros.ex:427
+  lib/pattern_vm/dsl/macros.ex:427
 
 warning: variable "module" is unused (if the variable is not meant to be used, prefix it with an underscore)
   examples/dsl_example.exs:71: PatternVM.Supervisor.start_child/2
 
-warning: redefining module PatternVM (current version loaded from _build/dev/lib/myapp/ebin/Elixir.PatternVM.beam)
+warning: redefining module PatternVM (current version loaded from _build/dev/lib/pattern_vm/ebin/Elixir.PatternVM.beam)
   examples/dsl_example.exs:85: PatternVM (module)
 
 warning: variable "module" is unused (if the variable is not meant to be used, prefix it with an underscore)
-  (myapp 0.1.0) examples/dsl_example.exs:124: PatternVM.handle_call/3
+  (pattern_vm 0.1.0) examples/dsl_example.exs:124: PatternVM.handle_call/3
 
 warning: variable "pattern_state" is unused (if the variable is not meant to be used, prefix it with an underscore)
-  (myapp 0.1.0) examples/dsl_example.exs:124: PatternVM.handle_call/3
+  (pattern_vm 0.1.0) examples/dsl_example.exs:124: PatternVM.handle_call/3
 
 warning: redefining module Phoenix.PubSub (current version loaded from _build/dev/lib/phoenix_pubsub/ebin/Elixir.Phoenix.PubSub.beam)
   examples/dsl_example.exs:182: Phoenix.PubSub (module)
 
-warning: redefining module PatternVM.DSL.Runtime (current version loaded from _build/dev/lib/myapp/ebin/Elixir.PatternVM.DSL.Runtime.beam)
+warning: redefining module PatternVM.DSL.Runtime (current version loaded from _build/dev/lib/pattern_vm/ebin/Elixir.PatternVM.DSL.Runtime.beam)
   examples/dsl_example.exs:210: PatternVM.DSL.Runtime (module)
 
-warning: redefining module PatternVM.Singleton (current version loaded from _build/dev/lib/myapp/ebin/Elixir.PatternVM.Singleton.beam)
+warning: redefining module PatternVM.Singleton (current version loaded from _build/dev/lib/pattern_vm/ebin/Elixir.PatternVM.Singleton.beam)
   examples/dsl_example.exs:321: PatternVM.Singleton (module)
 
-warning: redefining module PatternVM.Factory (current version loaded from _build/dev/lib/myapp/ebin/Elixir.PatternVM.Factory.beam)
+warning: redefining module PatternVM.Factory (current version loaded from _build/dev/lib/pattern_vm/ebin/Elixir.PatternVM.Factory.beam)
   examples/dsl_example.exs:325: PatternVM.Factory (module)
 
-warning: redefining module PatternVM.Observer (current version loaded from _build/dev/lib/myapp/ebin/Elixir.PatternVM.Observer.beam)
+warning: redefining module PatternVM.Observer (current version loaded from _build/dev/lib/pattern_vm/ebin/Elixir.PatternVM.Observer.beam)
   examples/dsl_example.exs:329: PatternVM.Observer (module)
 
-warning: redefining module PatternVM.Builder (current version loaded from _build/dev/lib/myapp/ebin/Elixir.PatternVM.Builder.beam)
+warning: redefining module PatternVM.Builder (current version loaded from _build/dev/lib/pattern_vm/ebin/Elixir.PatternVM.Builder.beam)
   examples/dsl_example.exs:333: PatternVM.Builder (module)
 
-warning: redefining module PatternVM.Strategy (current version loaded from _build/dev/lib/myapp/ebin/Elixir.PatternVM.Strategy.beam)
+warning: redefining module PatternVM.Strategy (current version loaded from _build/dev/lib/pattern_vm/ebin/Elixir.PatternVM.Strategy.beam)
   examples/dsl_example.exs:337: PatternVM.Strategy (module)
 
 [PatternVM] initialized: %{state: %{patterns: %{}, pattern_registry: %{}}}

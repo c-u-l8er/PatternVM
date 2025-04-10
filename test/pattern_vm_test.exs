@@ -3,23 +3,9 @@ defmodule PatternVMTest do
   doctest PatternVM
 
   setup do
-    # Start PatternVM for each test
-    {:ok, pid} = PatternVM.start_link([])
-    # Create a Logger module mock to prevent warnings
-    if !Process.whereis(PatternVM.Logger) do
-      defmodule PatternVM.Logger do
-        def log_interaction(_, _, _), do: :ok
-      end
-    end
-
-    # Create a Supervisor module mock if needed
-    if !Process.whereis(PatternVM.Supervisor) do
-      defmodule PatternVM.Supervisor do
-        def start_child(_, _), do: {:ok, spawn(fn -> :ok end)}
-      end
-    end
-
-    %{pattern_vm_pid: pid}
+    # Clear test logs before each test
+    PatternVM.Logger.clear_test_logs()
+    :ok
   end
 
   test "basic pattern registration" do
@@ -49,20 +35,6 @@ defmodule PatternVMTest do
   end
 
   test "notify observers" do
-    # Set up a test PubSub module if needed
-    if !Process.whereis(PatternVM.PubSub) do
-      defmodule PatternVM.PubSub do
-        def subscribe(_), do: :ok
-      end
-    end
-
-    if !Process.whereis(Phoenix.PubSub) do
-      defmodule Phoenix.PubSub do
-        def subscribe(_, _), do: :ok
-        def broadcast(_, _, _), do: :ok
-      end
-    end
-
     # Register an observer
     {:ok, _} =
       PatternVM.register_pattern(PatternVM.Observer, %{
@@ -70,11 +42,18 @@ defmodule PatternVMTest do
         topics: ["test_topic"]
       })
 
-    # Simulate a notification (we're just testing the interface works)
+    # Simulate a notification
     data = %{message: "test message"}
     result = PatternVM.notify_observers("test_topic", data)
 
     # Verify the data was passed through
     assert result == data
+
+    # Check logs to verify notification was processed
+    logs = PatternVM.Logger.get_test_logs()
+
+    assert Enum.any?(logs, fn {source, action, _} ->
+             source == "Observer" && action == "received_update"
+           end)
   end
 end

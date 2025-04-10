@@ -8,18 +8,18 @@
 import Config
 
 config :pattern_vm,
-  ecto_repos: [PatternVm.Repo],
+  ecto_repos: [PatternVM.Repo],
   generators: [timestamp_type: :utc_datetime]
 
 # Configures the endpoint
-config :pattern_vm, PatternVmWeb.Endpoint,
+config :pattern_vm, PatternVMWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
-    formats: [html: PatternVmWeb.ErrorHTML, json: PatternVmWeb.ErrorJSON],
+    formats: [html: PatternVMWeb.ErrorHTML, json: PatternVMWeb.ErrorJSON],
     layout: false
   ],
-  pubsub_server: PatternVm.PubSub,
+  pubsub_server: PatternVM.PubSub,
   live_view: [signing_salt: "L3mahTHj"]
 
 # Configures the mailer
@@ -29,7 +29,7 @@ config :pattern_vm, PatternVmWeb.Endpoint,
 #
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
-config :pattern_vm, PatternVm.Mailer, adapter: Swoosh.Adapters.Local
+config :pattern_vm, PatternVM.Mailer, adapter: Swoosh.Adapters.Local
 
 # Configure esbuild (the version is required)
 config :esbuild,

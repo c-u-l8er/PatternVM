@@ -5,7 +5,10 @@ defmodule PatternVM.Singleton do
   # Pattern Behavior Implementation
   def pattern_name, do: :singleton
 
-  def initialize(_config), do: {:ok, %{instance: "I am the Singleton"}}
+  def initialize(config) do
+    instance = Map.get(config, :instance, "I am the Singleton")
+    {:ok, %{instance: instance}}
+  end
 
   def handle_interaction(:get_instance, _params, state) do
     PatternVM.Logger.log_interaction("Singleton", "get_instance", %{})

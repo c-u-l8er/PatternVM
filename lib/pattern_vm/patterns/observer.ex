@@ -14,11 +14,20 @@ defmodule PatternVM.Observer do
     updated_callbacks = Map.put(state.callbacks, topic, callback)
     new_state = %{state | topics: updated_topics, callbacks: updated_callbacks}
 
-    # Subscribe to the topic
-    Phoenix.PubSub.subscribe(PatternVM.PubSub, topic)
+    # Subscribe to the topic with error handling
+    case PatternVM.PubSub.subscribe(topic) do
+      :ok ->
+        PatternVM.Logger.log_interaction("Observer", "subscribe", %{topic: topic})
+        {:ok, {:subscribed, topic}, new_state}
 
-    PatternVM.Logger.log_interaction("Observer", "subscribe", %{topic: topic})
-    {:ok, {:subscribed, topic}, new_state}
+      error ->
+        PatternVM.Logger.log_interaction("Observer", "subscribe_error", %{
+          topic: topic,
+          error: error
+        })
+
+        {:error, "Could not subscribe to topic #{topic}: #{inspect(error)}", state}
+    end
   end
 
   # Client API
@@ -32,13 +41,30 @@ defmodule PatternVM.Observer do
       callbacks: args[:callbacks] || %{}
     }
 
-    # Subscribe to all initial topics
-    Enum.each(state.topics, fn topic ->
-      Phoenix.PubSub.subscribe(PatternVM.PubSub, topic)
-      PatternVM.Logger.log_interaction("Observer", "initial_subscribe", %{topic: topic})
-    end)
+    # Subscribe to topics with a delay to ensure PubSub is initialized
+    if state.topics != [] do
+      Process.send_after(self(), :subscribe_to_topics, 100)
+    end
 
     {:ok, state}
+  end
+
+  def handle_info(:subscribe_to_topics, state) do
+    # Try to subscribe to all topics, log any errors but don't crash
+    Enum.each(state.topics, fn topic ->
+      case PatternVM.PubSub.subscribe(topic) do
+        :ok ->
+          PatternVM.Logger.log_interaction("Observer", "initial_subscribe", %{topic: topic})
+
+        error ->
+          PatternVM.Logger.log_interaction("Observer", "initial_subscribe_error", %{
+            topic: topic,
+            error: error
+          })
+      end
+    end)
+
+    {:noreply, state}
   end
 
   def handle_info({:update, data} = message, state) do

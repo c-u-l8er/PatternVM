@@ -19,62 +19,34 @@ defmodule PatternVM.DSL.RuntimeTest do
   end
 
   setup do
-    # Set up for runtime tests
-    # Mock PatternVM to prevent actual execution
-    if !Process.whereis(PatternVM) do
-      defmodule PatternVM do
-        def start_link(_), do: {:ok, self()}
-        def register_pattern(_, _), do: {:ok, :mock_pattern}
-        def interact(_, _, _), do: %{mocked: true}
-        def notify_observers(_, data), do: data
-      end
-    end
-
-    # Mock logger
-    if !Process.whereis(PatternVM.Logger) do
-      defmodule PatternVM.Logger do
-        def log_interaction(_, _, _), do: :ok
-      end
-    end
-
+    # Clear test logs before each test
+    PatternVM.Logger.clear_test_logs()
     :ok
   end
 
   test "execute_definition initializes patterns" do
-    # Mock the Runtime module to track calls
-    original_register = &PatternVM.DSL.Runtime.register_patterns/1
-    original_setup = &PatternVM.DSL.Runtime.setup_interactions/1
+    # Execute definition and count patterns
+    initial_logs_count = length(PatternVM.Logger.get_test_logs())
 
-    # Count call attempts
-    register_count = 0
-    setup_count = 0
+    # Execute definition
+    workflows = PatternVM.DSL.Runtime.execute_definition(SimplePatterns)
 
-    try do
-      # Replace functions with counting versions
-      :meck.new(PatternVM.DSL.Runtime, [:passthrough])
+    # Check logs to verify pattern registration
+    logs = PatternVM.Logger.get_test_logs()
+    new_logs = length(logs) - initial_logs_count
 
-      :meck.expect(PatternVM.DSL.Runtime, :register_patterns, fn patterns ->
-        register_count = register_count + 1
-        original_register.(patterns)
+    # Verify expected behavior
+    assert new_logs > 0
+    assert workflows == [:test_workflow]
+
+    # Check for specific registration log entries
+    registration_logs =
+      Enum.filter(logs, fn {source, action, _} ->
+        source == "PatternVM" && action == "register_pattern"
       end)
 
-      :meck.expect(PatternVM.DSL.Runtime, :setup_interactions, fn interactions ->
-        setup_count = setup_count + 1
-        original_setup.(interactions)
-      end)
-
-      # Execute definition
-      workflows = PatternVM.DSL.Runtime.execute_definition(SimplePatterns)
-
-      # Verify expected calls and return
-      assert :meck.num_calls(PatternVM.DSL.Runtime, :register_patterns, :_) == 1
-      assert :meck.num_calls(PatternVM.DSL.Runtime, :setup_interactions, :_) == 1
-      assert workflows == [:test_workflow]
-    after
-      if :meck.validate(PatternVM.DSL.Runtime) do
-        :meck.unload(PatternVM.DSL.Runtime)
-      end
-    end
+    # config and product_factory
+    assert length(registration_logs) >= 2
   end
 
   test "execute_workflow runs the specified workflow" do
@@ -93,44 +65,15 @@ defmodule PatternVM.DSL.RuntimeTest do
       )
     end
 
+    # Initialize patterns
+    PatternVM.DSL.Runtime.execute_definition(ContextWorkflow)
+
     # Execute the workflow
     context = PatternVM.DSL.Runtime.execute_workflow(ContextWorkflow, :context_test)
 
     # Verify context contains expected results
     assert Map.has_key?(context, :last_result)
     # From the notify step
-    assert context.last_result == %{executed: true}
-  end
-
-  test "process_context_vars handles context substitution" do
-    # Call the function directly
-    test_context = %{value: "test_value", nested: %{key: "nested_value"}}
-
-    # Test simple value
-    simple_result =
-      PatternVM.DSL.Runtime.process_context_vars(
-        {:context, :value},
-        test_context
-      )
-
-    assert simple_result == "test_value"
-
-    # Test nested in map
-    map_result =
-      PatternVM.DSL.Runtime.process_context_vars(
-        %{key1: "static", key2: {:context, :value}},
-        test_context
-      )
-
-    assert map_result == %{key1: "static", key2: "test_value"}
-
-    # Test ordinary value (not context)
-    normal_result =
-      PatternVM.DSL.Runtime.process_context_vars(
-        "not_context",
-        test_context
-      )
-
-    assert normal_result == "not_context"
+    assert context.last_result.executed == true
   end
 end

@@ -51,4 +51,10 @@ defmodule PatternVM.TestHelpers do
 
     :ok
   end
+
+  def setup_pubsub do
+    # Create a test PubSub registry
+    {:ok, _} = Registry.start_link(keys: :duplicate, name: PatternVM.PubSub)
+    :ok
+  end
 end

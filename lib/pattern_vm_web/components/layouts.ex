@@ -1,4 +1,4 @@
-defmodule PatternVmWeb.Layouts do
+defmodule PatternVMWeb.Layouts do
   @moduledoc """
   This module holds different layouts used by your application.
 
@@ -7,7 +7,10 @@ defmodule PatternVmWeb.Layouts do
   application router. The "app" layout is rendered as component
   in regular views and live views.
   """
-  use PatternVmWeb, :html
+  use PatternVMWeb, :html
+
+  # Explicitly import Gettext to make the gettext function available
+  import PatternVMWeb.Gettext
 
   embed_templates "layouts/*"
 

@@ -1,12 +1,12 @@
-defmodule PatternVmWeb.ErrorJSONTest do
-  use PatternVmWeb.ConnCase, async: true
+defmodule PatternVMWeb.ErrorJSONTest do
+  use PatternVMWeb.ConnCase, async: true
 
   test "renders 404" do
-    assert PatternVmWeb.ErrorJSON.render("404.json", %{}) == %{errors: %{detail: "Not Found"}}
+    assert PatternVMWeb.ErrorJSON.render("404.json", %{}) == %{errors: %{detail: "Not Found"}}
   end
 
   test "renders 500" do
-    assert PatternVmWeb.ErrorJSON.render("500.json", %{}) ==
+    assert PatternVMWeb.ErrorJSON.render("500.json", %{}) ==
              %{errors: %{detail: "Internal Server Error"}}
   end
 end

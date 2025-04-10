@@ -148,8 +148,7 @@ defmodule PatternVM do
   end
 
   def notify_observers(topic, data) do
-    Phoenix.PubSub.broadcast(PatternVM.PubSub, topic, {:update, data})
-    data
+    PatternVM.PubSub.broadcast(topic, {:update, Map.put(data, :topic, topic)})
   end
 
   # Helper to create mock interaction results

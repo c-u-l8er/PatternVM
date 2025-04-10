@@ -2,39 +2,9 @@ defmodule PatternVM.Integration.PatternInteractionsTest do
   use ExUnit.Case
 
   setup do
-    # Start PatternVM for integration tests
-    {:ok, pid} = PatternVM.start_link([])
-
-    # Mock logger to prevent warnings
-    if !Process.whereis(PatternVM.Logger) do
-      defmodule PatternVM.Logger do
-        def log_interaction(_, _, _), do: :ok
-      end
-    end
-
-    # Mock Supervisor
-    if !Process.whereis(PatternVM.Supervisor) do
-      defmodule PatternVM.Supervisor do
-        def start_child(_, _), do: {:ok, spawn(fn -> :ok end)}
-      end
-    end
-
-    # Mock PubSub for testing
-    if !Process.whereis(Phoenix.PubSub) do
-      defmodule Phoenix.PubSub do
-        def subscribe(_, _), do: :ok
-        def broadcast(_, _, _), do: :ok
-      end
-    end
-
-    # Mock UUID for testing
-    if !Process.whereis(UUID) do
-      defmodule UUID do
-        def uuid4(), do: "test-uuid"
-      end
-    end
-
-    %{pattern_vm_pid: pid}
+    # Clear test logs before each test
+    PatternVM.Logger.clear_test_logs()
+    :ok
   end
 
   test "builder pattern interacting with strategy pattern", %{pattern_vm_pid: _pid} do

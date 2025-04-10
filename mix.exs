@@ -1,4 +1,4 @@
-defmodule PatternVm.MixProject do
+defmodule PatternVM.MixProject do
   use Mix.Project
 
   def project do
@@ -19,7 +19,7 @@ defmodule PatternVm.MixProject do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {PatternVm.Application, []},
+      mod: {PatternVM.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -59,7 +59,9 @@ defmodule PatternVm.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
-      {:uuid, "~> 1.1"}
+      {:uuid, "~> 1.1"},
+      {:meck, "~> 0.9", only: :test},
+      {:phoenix_pubsub, "~> 2.1"}
     ]
   end
 

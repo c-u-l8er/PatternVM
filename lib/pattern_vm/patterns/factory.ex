@@ -19,14 +19,14 @@ defmodule PatternVM.Factory do
 
   # Product Creation Logic
   def create_product(:widget) do
-    %Product{type: :widget, id: UUID.uuid4(), created_at: DateTime.utc_now()}
+    %Product{type: :widget, id: PatternVM.UUID.uuid4(), created_at: DateTime.utc_now()}
   end
 
   def create_product(:gadget) do
-    %Product{type: :gadget, id: UUID.uuid4(), created_at: DateTime.utc_now()}
+    %Product{type: :gadget, id: PatternVM.UUID.uuid4(), created_at: DateTime.utc_now()}
   end
 
   def create_product(:tool) do
-    %Product{type: :tool, id: UUID.uuid4(), created_at: DateTime.utc_now()}
+    %Product{type: :tool, id: PatternVM.UUID.uuid4(), created_at: DateTime.utc_now()}
   end
 end
