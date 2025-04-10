@@ -1,8 +1,9 @@
 defmodule PatternVM do
   use GenServer
 
-  def start_link(_opts) do
-    GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
+  def start_link(opts) do
+    name = Keyword.get(opts, :name, __MODULE__)
+    GenServer.start_link(__MODULE__, %{patterns: %{}, registry: %{}}, name: name)
   end
 
   def init(_) do
@@ -26,9 +27,13 @@ defmodule PatternVM do
 
     # Start observer for visualization - with error handling
     observer_pid =
-      case PatternVM.Supervisor.start_child(PatternVM.Observer, topics: ["pattern_logs"]) do
-        {:ok, pid} -> pid
-        _error -> nil
+      try do
+        case PatternVM.Supervisor.start_child(PatternVM.Observer, topics: ["pattern_logs"]) do
+          {:ok, pid} -> pid
+          _error -> nil
+        end
+      rescue
+        _ -> nil
       end
 
     PatternVM.Logger.log_interaction("PatternVM", "initialized", %{

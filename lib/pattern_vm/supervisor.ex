@@ -6,6 +6,11 @@ defmodule PatternVM.Supervisor do
   end
 
   def init(_init_arg) do
+    # Create ETS table for testing if we're in testing mode
+    if Application.get_env(:pattern_vm, :testing, false) do
+      :ets.new(:pattern_vm_children, [:named_table, :public])
+    end
+
     children = []
     Supervisor.init(children, strategy: :one_for_one)
   end
@@ -23,7 +28,13 @@ defmodule PatternVM.Supervisor do
       {:ok, pid} = result ->
         # Store in ETS table for test introspection
         if Application.get_env(:pattern_vm, :testing, false) do
-          :ets.insert(:pattern_vm_children, {pid, {module, args}})
+          # Only try to insert if the table exists
+          try do
+            :ets.insert(:pattern_vm_children, {pid, {module, args}})
+          rescue
+            # Ignore if table doesn't exist
+            _ -> :ok
+          end
         end
 
         result
