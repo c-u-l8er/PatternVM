@@ -101,7 +101,7 @@ defmodule PatternVM.ProxyTest do
   end
 
   test "registers new service", %{state: state} do
-    new_service = fn -> "New service result" end
+    new_service = fn _args -> "New service result" end
 
     {:ok, {:registered, :new_service}, new_state} =
       PatternVM.Proxy.handle_interaction(

@@ -2,9 +2,21 @@ defmodule PatternVM.PubSubTest do
   use ExUnit.Case
 
   setup do
-    # Start Phoenix.PubSub for testing
-    # This is needed because PatternVM.PubSub is a wrapper around Phoenix.PubSub
-    {:ok, _} = Phoenix.PubSub.Supervisor.start_link(name: PatternVM.PubSub)
+    # Start Phoenix.PubSub for testing if not already started
+    case Phoenix.PubSub.Supervisor.start_link(name: PatternVM.PubSub) do
+      {:ok, pid} ->
+        on_exit(fn ->
+          try do
+            Process.exit(pid, :normal)
+          catch
+            _kind, _reason -> :ok
+          end
+        end)
+
+      {:error, {:already_started, _pid}} ->
+        :ok
+    end
+
     :ok
   end
 

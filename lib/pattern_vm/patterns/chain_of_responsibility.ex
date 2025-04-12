@@ -13,7 +13,7 @@ defmodule PatternVM.ChainOfResponsibility do
 
   def handle_interaction(
         :register_handler,
-        %{name: name, can_handle_fn: can_handle_fn, handle_fn: handle_fn, priority: priority},
+        %{name: name, can_handle: can_handle_fn, handle: handle_fn, priority: priority},
         state
       ) do
     handler = %{

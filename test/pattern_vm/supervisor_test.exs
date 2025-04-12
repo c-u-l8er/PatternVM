@@ -10,14 +10,18 @@ defmodule PatternVM.SupervisorTest do
       :ets.new(:pattern_vm_children, [:named_table, :public])
     end
 
-    # Start the supervisor
-    {:ok, pid} = PatternVM.Supervisor.start_link([])
+    # Start the supervisor if not already started
+    case PatternVM.Supervisor.start_link([]) do
+      {:ok, pid} ->
+        on_exit(fn ->
+          if Process.alive?(pid), do: Process.exit(pid, :normal)
+        end)
 
-    on_exit(fn ->
-      if Process.alive?(pid), do: Process.exit(pid, :normal)
-    end)
+        %{supervisor_pid: pid}
 
-    %{supervisor_pid: pid}
+      {:error, {:already_started, pid}} ->
+        %{supervisor_pid: pid}
+    end
   end
 
   test "starts child processes", %{supervisor_pid: pid} do
