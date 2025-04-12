@@ -67,7 +67,11 @@ defmodule PatternVM.SupervisorTest do
     # Try to start the failing worker
     result = PatternVM.Supervisor.start_child(FailingWorker, %{})
 
-    # Should return error from init
-    assert result == {:error, "Intentional failure"}
+    # Should return error from init - but extract just the reason from the complex tuple
+    assert match?({:error, _}, result)
+    assert elem(result, 0) == :error
+    # Check that the error message contains our expected text
+    error_info = elem(result, 1)
+    assert is_tuple(error_info) and elem(error_info, 0) == "Intentional failure"
   end
 end

@@ -13,17 +13,22 @@ defmodule PatternVM.ChainOfResponsibility do
 
   def handle_interaction(
         :register_handler,
-        %{name: name, can_handle: can_handle_fn, handle: handle_fn, priority: priority},
+        %{name: name} = params,
         state
       ) do
+    # Extract parameters with support for both naming conventions
+    can_handle_fn = params[:can_handle] || params[:can_handle_fn]
+    handle_fn = params[:handle] || params[:handle_fn]
+    priority = params[:priority] || 0
+
     handler = %{
       name: name,
       can_handle: can_handle_fn,
       handle: handle_fn,
-      priority: priority || 0
+      priority: priority
     }
 
-    # Insert the handler and sort by priority (higher numbers first)
+    # Rest of the function remains the same
     updated_handlers =
       [handler | state.handlers]
       |> Enum.sort_by(& &1.priority, :desc)

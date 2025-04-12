@@ -1,4 +1,4 @@
-<Layouts.flash_group flash={@flash} />
+<PatternVMWeb.Layouts.flash_group flash={@flash} />
 <div class="left-[40rem] fixed inset-y-0 right-0 z-0 hidden lg:block xl:left-[50rem]">
   <svg
     viewBox="0 0 1480 957"
@@ -76,11 +76,7 @@
               />
             </svg>
           </button>
-          <code
-            id="setup-elixir"
-            class="block px-1 overflow-x-auto whitespace-pre"
-            phx-no-format
-          >export PATH=$HOME/.asdf/installs/erlang/27.3/erts-15.2.3/bin:$PATH
+          <code id="setup-elixir" class="block px-1 overflow-x-auto whitespace-pre" phx-no-format>export PATH=$HOME/.asdf/installs/erlang/27.3/erts-15.2.3/bin:$PATH
 export PATH=$HOME/.asdf/installs/elixir/1.15/bin:$PATH</code>
         </div>
       </div>
@@ -102,7 +98,7 @@ export PATH=$HOME/.asdf/installs/elixir/1.15/bin:$PATH</code>
           v{Application.spec(:phoenix, :vsn)}
         </small>
       </h1>
-      <Layouts.theme_toggle />
+      <PatternVMWeb.Layouts.theme_toggle />
     </div>
 
     <p class="text-[2rem] mt-4 font-semibold leading-10 tracking-tighter text-balance">
