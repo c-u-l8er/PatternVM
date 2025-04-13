@@ -13,6 +13,79 @@ defmodule PatternVM.DSL do
   defmacro __using__(_opts) do
     quote do
       import PatternVM.DSL
+      # Import all pattern definition functions
+      import PatternVM.DSL,
+        only: [
+          pattern: 2,
+          pattern: 3,
+          singleton: 1,
+          singleton: 2,
+          factory: 1,
+          factory: 2,
+          factory: 3,
+          builder: 1,
+          builder: 2,
+          builder: 3,
+          strategy: 1,
+          strategy: 2,
+          strategy: 3,
+          adapter: 1,
+          adapter: 2,
+          adapter: 3,
+          observer: 1,
+          observer: 2,
+          observer: 3,
+          decorator: 1,
+          decorator: 2,
+          decorator: 3,
+          command: 1,
+          command: 2,
+          command: 3,
+          composite: 1,
+          composite: 2,
+          proxy: 1,
+          proxy: 2,
+          proxy: 3,
+          proxy: 4,
+          chain_of_responsibility: 1,
+          chain_of_responsibility: 2,
+          chain_of_responsibility: 3,
+
+          # Action functions
+          create_product: 2,
+          subscribe: 2,
+          notify: 2,
+          build_product: 3,
+          build_product: 4,
+          execute_strategy: 3,
+          adapt: 3,
+          execute_command: 3,
+          undo_command: 1,
+          decorate: 3,
+          create_component: 4,
+          create_component: 5,
+          add_child: 3,
+          proxy_request: 3,
+          proxy_request: 4,
+          process_request: 2,
+
+          # Flow constructors
+          interaction: 3,
+          interaction: 4,
+          workflow: 2,
+          sequence: 1,
+          parallel: 1,
+
+          # Helper functions
+          function_ref: 3,
+          represent_function: 1,
+
+          # Store and transform operations
+          store: 2,
+          transform: 2,
+          transform: 3
+        ]
+
       Module.register_attribute(__MODULE__, :patterns, accumulate: true)
       Module.register_attribute(__MODULE__, :interactions, accumulate: true)
       Module.register_attribute(__MODULE__, :workflows, accumulate: true)
@@ -22,9 +95,17 @@ defmodule PatternVM.DSL do
 
   defmacro __before_compile__(_env) do
     quote do
-      def get_patterns, do: @patterns
-      def get_interactions, do: @interactions
-      def get_workflows, do: @workflows
+      def get_patterns do
+        @patterns
+      end
+
+      def get_interactions do
+        @interactions
+      end
+
+      def get_workflows do
+        @workflows
+      end
 
       def execute do
         PatternVM.DSL.Runtime.execute_definition(__MODULE__)
@@ -35,7 +116,8 @@ defmodule PatternVM.DSL do
   # Define a pattern with its configuration
   defmacro pattern(name, type, config \\ quote(do: %{})) do
     quote do
-      @patterns {unquote(name), unquote(type), unquote(config)}
+      pattern_config = unquote(config)
+      @patterns {unquote(name), unquote(type), pattern_config}
     end
   end
 
@@ -61,6 +143,30 @@ defmodule PatternVM.DSL do
     end
   end
 
+  # Store operation
+  defmacro store(key, value) do
+    quote do
+      {:store, unquote(key), unquote(value)}
+    end
+  end
+
+  # Transform operation
+  defmacro transform(key, value) do
+    quote do
+      {:transform, unquote(key), unquote(value)}
+    end
+  end
+
+  defmacro transform(key, source_key, transform_fn) do
+    quote do
+      {:transform, unquote(key),
+       fn ctx ->
+         source_value = Map.get(ctx, unquote(source_key))
+         unquote(transform_fn).(source_value)
+       end}
+    end
+  end
+
   # Pattern-specific DSL constructs
 
   # Singleton Pattern
@@ -71,55 +177,50 @@ defmodule PatternVM.DSL do
   end
 
   # Factory Pattern
-  defmacro factory(name, products, config \\ quote(do: %{})) do
+  defmacro factory(name, products \\ [], config \\ quote(do: %{})) do
     quote do
-      merged_config = Map.merge(unquote(config), %{products: unquote(products)})
-      pattern(unquote(name), :factory, merged_config)
+      pattern_config = Map.merge(unquote(config), %{products: unquote(products)})
+      pattern(unquote(name), :factory, pattern_config)
     end
   end
 
   # Observer Pattern
   defmacro observer(name, topics \\ [], config \\ quote(do: %{})) do
     quote do
-      merged_config = Map.merge(unquote(config), %{topics: unquote(topics)})
-      pattern(unquote(name), :observer, merged_config)
+      pattern_config = Map.merge(unquote(config), %{topics: unquote(topics)})
+      pattern(unquote(name), :observer, pattern_config)
     end
   end
 
   # Builder Pattern
-  defmacro builder(name, parts, config \\ quote(do: %{})) do
+  defmacro builder(name, parts \\ [], config \\ quote(do: %{})) do
     quote do
-      merged_config = Map.merge(unquote(config), %{available_parts: unquote(parts)})
-      pattern(unquote(name), :builder, merged_config)
+      pattern_config = Map.merge(unquote(config), %{available_parts: unquote(parts)})
+      pattern(unquote(name), :builder, pattern_config)
     end
   end
 
   # Strategy Pattern
-  defmacro strategy(name, strategies, config \\ quote(do: %{})) do
+  defmacro strategy(name, strategies \\ %{}, config \\ quote(do: %{})) do
     quote do
-      merged_config = Map.merge(unquote(config), %{strategies: unquote(strategies)})
-      pattern(unquote(name), :strategy, merged_config)
+      pattern_config = Map.merge(unquote(config), %{strategies: unquote(strategies)})
+      pattern(unquote(name), :strategy, pattern_config)
     end
   end
 
   # Adapter Pattern
   defmacro adapter(name, adapters \\ quote(do: %{}), config \\ quote(do: %{})) do
     quote do
-      # Convert function references in the adapters map to MFA tuples
-      processed_adapters =
-        for {k, v} <- unquote(adapters), into: %{} do
-          {k, represent_function(v)}
-        end
-
-      merged_config = Map.merge(unquote(config), %{adapters: processed_adapters})
-      pattern(unquote(name), :adapter, merged_config)
+      processed_adapters = unquote(adapters)
+      pattern_config = Map.merge(unquote(config), %{adapters: processed_adapters})
+      pattern(unquote(name), :adapter, pattern_config)
     end
   end
 
   # Helper macro to convert function references
   defmacro represent_function(func) do
-    quote bind_quoted: [func: func] do
-      case func do
+    quote do
+      case unquote(func) do
         # If it's already a function reference tuple, return it
         {:function_ref, _, _, _} = ref ->
           ref
@@ -132,7 +233,7 @@ defmodule PatternVM.DSL do
         # Handle anonymous functions by storing as strings to be evaluated later
         # This is a simplified approach - won't work for complex anonymous functions
         _ ->
-          {:function_src, Macro.to_string(func)}
+          {:function_src, Macro.to_string(unquote(func))}
       end
     end
   end
@@ -140,16 +241,16 @@ defmodule PatternVM.DSL do
   # Command Pattern
   defmacro command(name, commands \\ quote(do: %{}), config \\ quote(do: %{})) do
     quote do
-      merged_config = Map.merge(unquote(config), %{commands: unquote(commands)})
-      pattern(unquote(name), :command, merged_config)
+      pattern_config = Map.merge(unquote(config), %{commands: unquote(commands)})
+      pattern(unquote(name), :command, pattern_config)
     end
   end
 
   # Decorator Pattern
   defmacro decorator(name, decorators \\ quote(do: %{}), config \\ quote(do: %{})) do
     quote do
-      merged_config = Map.merge(unquote(config), %{decorators: unquote(decorators)})
-      pattern(unquote(name), :decorator, merged_config)
+      pattern_config = Map.merge(unquote(config), %{decorators: unquote(decorators)})
+      pattern(unquote(name), :decorator, pattern_config)
     end
   end
 
@@ -168,21 +269,21 @@ defmodule PatternVM.DSL do
              config \\ quote(do: %{})
            ) do
     quote do
-      merged_config =
+      pattern_config =
         Map.merge(unquote(config), %{
           services: unquote(services),
           access_rules: unquote(access_rules)
         })
 
-      pattern(unquote(name), :proxy, merged_config)
+      pattern(unquote(name), :proxy, pattern_config)
     end
   end
 
   # Chain of Responsibility Pattern
   defmacro chain_of_responsibility(name, handlers \\ quote(do: []), config \\ quote(do: %{})) do
     quote do
-      merged_config = Map.merge(unquote(config), %{handlers: unquote(handlers)})
-      pattern(unquote(name), :chain_of_responsibility, merged_config)
+      pattern_config = Map.merge(unquote(config), %{handlers: unquote(handlers)})
+      pattern(unquote(name), :chain_of_responsibility, pattern_config)
     end
   end
 
@@ -198,7 +299,11 @@ defmodule PatternVM.DSL do
   # Observer actions
   defmacro subscribe(observer_name, topic) do
     quote do
-      {:interact, unquote(observer_name), :subscribe, %{topic: unquote(topic)}}
+      {:interact, unquote(observer_name), :subscribe,
+       %{
+         topic: unquote(topic),
+         callback: fn _ -> :ok end
+       }}
     end
   end
 

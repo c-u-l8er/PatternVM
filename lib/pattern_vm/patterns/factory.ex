@@ -18,8 +18,8 @@ defmodule PatternVM.Factory do
   end
 
   # Product Creation Logic
-  def create_product(:widget) do
-    %Product{type: :widget, id: PatternVM.UUID.uuid4(), created_at: DateTime.utc_now()}
+  def create_product(type) do
+    %Product{type: type, id: PatternVM.UUID.uuid4(), created_at: DateTime.utc_now()}
   end
 
   def create_product(:gadget) do

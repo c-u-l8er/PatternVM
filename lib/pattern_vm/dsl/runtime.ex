@@ -151,6 +151,30 @@ defmodule PatternVM.DSL.Runtime do
     execute_steps(parallel, context)
   end
 
+  # Add support for :store operations
+  defp execute_step({:store, key, source}, context) do
+    value =
+      case source do
+        :last_result -> Map.get(context, :last_result)
+        {:context, path} when is_list(path) -> get_in(context, path)
+        {:context, key} -> Map.get(context, key)
+        other -> other
+      end
+
+    Map.put(context, key, value)
+  end
+
+  # Add support for :transform operations
+  defp execute_step({:transform, key, transform_fn}, context) when is_function(transform_fn, 1) do
+    result = transform_fn.(context)
+    Map.put(context, key, result)
+  end
+
+  defp execute_step({:transform, key, {:context, path}}, context) when is_list(path) do
+    value = get_in(context, path)
+    Map.put(context, key, value)
+  end
+
   defp process_context_vars(params, context) when is_map(params) do
     Enum.reduce(params, %{}, fn {k, v}, acc ->
       Map.put(acc, k, process_context_vars(v, context))
@@ -159,6 +183,17 @@ defmodule PatternVM.DSL.Runtime do
 
   defp process_context_vars({:context, key}, context) do
     Map.get(context, key)
+  end
+
+  # Support for nested context references
+  defp process_context_vars({:context, key, path_key}, context) do
+    value = Map.get(context, key)
+    if is_map(value), do: Map.get(value, path_key), else: nil
+  end
+
+  defp process_context_vars({:context, key, path_keys}, context) when is_list(path_keys) do
+    value = Map.get(context, key)
+    get_in(value, path_keys)
   end
 
   defp process_context_vars(value, _context) do

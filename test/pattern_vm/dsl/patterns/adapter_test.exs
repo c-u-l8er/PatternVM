@@ -17,7 +17,9 @@ defmodule PatternVM.DSL.AdapterTest do
     end
 
     def list_to_map(list) do
-      Enum.with_index(list) |> Enum.into(%{})
+      list
+      |> Enum.with_index()
+      |> Enum.into(%{}, fn {value, key} -> {key, value} end)
     end
   end
 
