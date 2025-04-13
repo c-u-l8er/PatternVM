@@ -26,42 +26,12 @@ defmodule PatternVM.DSL.Runtime do
     execute_steps(steps, initial_context)
   end
 
-  # Helper to resolve function references
-  def resolve_function({:function_ref, module, function, arity}) do
-    :erlang.make_fun(module, function, arity)
-  end
-
-  def resolve_function({:function_src, source}) do
-    # This is a simplified approach - won't work for complex anonymous functions
-    {func, _} = Code.eval_string(source)
-    func
-  end
-
-  def resolve_function(other), do: other
-
-  # Helper to resolve function references in maps
-  def resolve_functions_in_map(map) when is_map(map) do
-    Enum.into(map, %{}, fn
-      {k, {:function_ref, _, _, _} = v} -> {k, resolve_function(v)}
-      {k, {:function_src, _} = v} -> {k, resolve_function(v)}
-      {k, v} when is_map(v) -> {k, resolve_functions_in_map(v)}
-      {k, v} when is_list(v) -> {k, Enum.map(v, &resolve_functions_in_map/1)}
-      other -> other
-    end)
-  end
-
-  def resolve_functions_in_map(list) when is_list(list) do
-    Enum.map(list, &resolve_functions_in_map/1)
-  end
-
-  def resolve_functions_in_map(other), do: other
-
   # Private implementation
 
   defp ensure_pattern_vm_started do
     case Process.whereis(PatternVM) do
       nil ->
-        Application.ensure_all_started(:pattern_vm)
+        {:ok, _} = PatternVM.start_link([])
 
       _pid ->
         :ok
@@ -91,11 +61,8 @@ defmodule PatternVM.DSL.Runtime do
         _ -> raise "Unknown pattern type: #{type}"
       end
 
-    # Resolve any function references in the config
-    resolved_config = resolve_functions_in_map(config)
-
-    # Ensure proper configuration with name
-    config_with_name = Map.put(resolved_config, :name, name)
+    # Register with config including name
+    config_with_name = Map.put(config, :name, name)
     PatternVM.register_pattern(module, config_with_name)
   end
 
@@ -112,8 +79,13 @@ defmodule PatternVM.DSL.Runtime do
 
   defp execute_steps({:sequence, steps}, context) do
     Enum.reduce(steps, context, fn step, acc_context ->
-      result = execute_step(step, acc_context)
-      Map.merge(acc_context, %{last_result: result})
+      case execute_step(step, acc_context) do
+        {:store, key, value} ->
+          Map.put(acc_context, key, value)
+
+        result ->
+          Map.put(acc_context, :last_result, result)
+      end
     end)
   end
 
@@ -151,7 +123,7 @@ defmodule PatternVM.DSL.Runtime do
     execute_steps(parallel, context)
   end
 
-  # Add support for :store operations
+  # Handle :store operations differently to directly update the context
   defp execute_step({:store, key, source}, context) do
     value =
       case source do
@@ -161,18 +133,40 @@ defmodule PatternVM.DSL.Runtime do
         other -> other
       end
 
-    Map.put(context, key, value)
+    {:store, key, value}
   end
 
-  # Add support for :transform operations
+  # Transform operation that executes a function on the context
   defp execute_step({:transform, key, transform_fn}, context) when is_function(transform_fn, 1) do
     result = transform_fn.(context)
-    Map.put(context, key, result)
+    {:store, key, result}
   end
 
+  # Transform operation that accesses a nested path in the context
   defp execute_step({:transform, key, {:context, path}}, context) when is_list(path) do
     value = get_in(context, path)
-    Map.put(context, key, value)
+    {:store, key, value}
+  end
+
+  # Transform with variadic path components
+  defp execute_step({:transform, key, {:context, key_head, key_tail}}, context) do
+    value = context |> Map.get(key_head) |> Map.get(key_tail)
+    {:store, key, value}
+  end
+
+  defp execute_step({:transform, key, {:context, key_head, key_tail, key_more}}, context) do
+    value = context |> Map.get(key_head) |> Map.get(key_tail) |> Map.get(key_more)
+    {:store, key, value}
+  end
+
+  defp execute_step(
+         {:transform, key, {:context, key_head, key_tail, key_more, key_last}},
+         context
+       ) do
+    value =
+      context |> Map.get(key_head) |> Map.get(key_tail) |> Map.get(key_more) |> Map.get(key_last)
+
+    {:store, key, value}
   end
 
   defp process_context_vars(params, context) when is_map(params) do
@@ -185,15 +179,35 @@ defmodule PatternVM.DSL.Runtime do
     Map.get(context, key)
   end
 
-  # Support for nested context references
+  # Support for nested context references with two levels
   defp process_context_vars({:context, key, path_key}, context) do
     value = Map.get(context, key)
     if is_map(value), do: Map.get(value, path_key), else: nil
   end
 
-  defp process_context_vars({:context, key, path_keys}, context) when is_list(path_keys) do
+  # Support for nested context references with list path
+  defp process_context_vars({:context, key, path_key, path_more}, context) do
     value = Map.get(context, key)
-    get_in(value, path_keys)
+    if is_map(value), do: value |> Map.get(path_key) |> Map.get(path_more), else: nil
+  end
+
+  # Support for deeper nested paths
+  defp process_context_vars({:context, key, path_key, path_more, path_last}, context) do
+    value = Map.get(context, key)
+
+    if is_map(value),
+      do: value |> Map.get(path_key) |> Map.get(path_more) |> Map.get(path_last),
+      else: nil
+  end
+
+  # Support for array indexing in context
+  defp process_context_vars({:context, key, index}, context) when is_integer(index) do
+    value = Map.get(context, key)
+    if is_list(value), do: Enum.at(value, index), else: nil
+  end
+
+  defp process_context_vars(list, context) when is_list(list) do
+    Enum.map(list, &process_context_vars(&1, context))
   end
 
   defp process_context_vars(value, _context) do

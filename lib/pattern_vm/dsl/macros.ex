@@ -28,7 +28,6 @@ defmodule PatternVM.DSL do
           builder: 3,
           strategy: 1,
           strategy: 2,
-          strategy: 3,
           adapter: 1,
           adapter: 2,
           adapter: 3,
@@ -40,16 +39,13 @@ defmodule PatternVM.DSL do
           decorator: 3,
           command: 1,
           command: 2,
-          command: 3,
           composite: 1,
           composite: 2,
           proxy: 1,
           proxy: 2,
           proxy: 3,
-          proxy: 4,
           chain_of_responsibility: 1,
           chain_of_responsibility: 2,
-          chain_of_responsibility: 3,
 
           # Action functions
           create_product: 2,
@@ -75,10 +71,6 @@ defmodule PatternVM.DSL do
           workflow: 2,
           sequence: 1,
           parallel: 1,
-
-          # Helper functions
-          function_ref: 3,
-          represent_function: 1,
 
           # Store and transform operations
           store: 2,
@@ -116,8 +108,7 @@ defmodule PatternVM.DSL do
   # Define a pattern with its configuration
   defmacro pattern(name, type, config \\ quote(do: %{})) do
     quote do
-      pattern_config = unquote(config)
-      @patterns {unquote(name), unquote(type), pattern_config}
+      @patterns {unquote(name), unquote(type), unquote(config)}
     end
   end
 
@@ -133,13 +124,6 @@ defmodule PatternVM.DSL do
   defmacro workflow(name, steps) do
     quote do
       @workflows {unquote(name), unquote(steps)}
-    end
-  end
-
-  # Helper to handle function references
-  defmacro function_ref(module, function, arity) do
-    quote do
-      {:function_ref, unquote(module), unquote(function), unquote(arity)}
     end
   end
 
@@ -201,56 +185,34 @@ defmodule PatternVM.DSL do
   end
 
   # Strategy Pattern
-  defmacro strategy(name, strategies \\ %{}, config \\ quote(do: %{})) do
-    quote do
-      pattern_config = Map.merge(unquote(config), %{strategies: unquote(strategies)})
-      pattern(unquote(name), :strategy, pattern_config)
+  defmacro strategy(name, strategies \\ quote(do: %{}), config \\ quote(do: %{})) do
+    quote bind_quoted: [name: name, strategies: strategies, config: config] do
+      pattern_config = Map.merge(config, %{strategies: strategies})
+      pattern(name, :strategy, pattern_config)
     end
   end
 
   # Adapter Pattern
   defmacro adapter(name, adapters \\ quote(do: %{}), config \\ quote(do: %{})) do
-    quote do
-      processed_adapters = unquote(adapters)
-      pattern_config = Map.merge(unquote(config), %{adapters: processed_adapters})
-      pattern(unquote(name), :adapter, pattern_config)
-    end
-  end
-
-  # Helper macro to convert function references
-  defmacro represent_function(func) do
-    quote do
-      case unquote(func) do
-        # If it's already a function reference tuple, return it
-        {:function_ref, _, _, _} = ref ->
-          ref
-
-        # Convert &Mod.fun/arity notation
-        {:&, _, [{:/, _, [{:., _, [{:__aliases__, _, mod}, fun]}, _, [arity]]}]} ->
-          module = Module.concat(mod)
-          {:function_ref, module, fun, arity}
-
-        # Handle anonymous functions by storing as strings to be evaluated later
-        # This is a simplified approach - won't work for complex anonymous functions
-        _ ->
-          {:function_src, Macro.to_string(unquote(func))}
-      end
+    quote bind_quoted: [name: name, adapters: adapters, config: config] do
+      pattern_config = Map.merge(config, %{adapters: adapters})
+      pattern(name, :adapter, pattern_config)
     end
   end
 
   # Command Pattern
   defmacro command(name, commands \\ quote(do: %{}), config \\ quote(do: %{})) do
-    quote do
-      pattern_config = Map.merge(unquote(config), %{commands: unquote(commands)})
-      pattern(unquote(name), :command, pattern_config)
+    quote bind_quoted: [name: name, commands: commands, config: config] do
+      pattern_config = Map.merge(config, %{commands: commands})
+      pattern(name, :command, pattern_config)
     end
   end
 
   # Decorator Pattern
   defmacro decorator(name, decorators \\ quote(do: %{}), config \\ quote(do: %{})) do
-    quote do
-      pattern_config = Map.merge(unquote(config), %{decorators: unquote(decorators)})
-      pattern(unquote(name), :decorator, pattern_config)
+    quote bind_quoted: [name: name, decorators: decorators, config: config] do
+      pattern_config = Map.merge(config, %{decorators: decorators})
+      pattern(name, :decorator, pattern_config)
     end
   end
 
@@ -268,22 +230,27 @@ defmodule PatternVM.DSL do
              access_rules \\ quote(do: %{}),
              config \\ quote(do: %{})
            ) do
-    quote do
+    quote bind_quoted: [
+            name: name,
+            services: services,
+            access_rules: access_rules,
+            config: config
+          ] do
       pattern_config =
-        Map.merge(unquote(config), %{
-          services: unquote(services),
-          access_rules: unquote(access_rules)
+        Map.merge(config, %{
+          services: services,
+          access_rules: access_rules
         })
 
-      pattern(unquote(name), :proxy, pattern_config)
+      pattern(name, :proxy, pattern_config)
     end
   end
 
   # Chain of Responsibility Pattern
   defmacro chain_of_responsibility(name, handlers \\ quote(do: []), config \\ quote(do: %{})) do
-    quote do
-      pattern_config = Map.merge(unquote(config), %{handlers: unquote(handlers)})
-      pattern(unquote(name), :chain_of_responsibility, pattern_config)
+    quote bind_quoted: [name: name, handlers: handlers, config: config] do
+      pattern_config = Map.merge(config, %{handlers: handlers})
+      pattern(name, :chain_of_responsibility, pattern_config)
     end
   end
 
