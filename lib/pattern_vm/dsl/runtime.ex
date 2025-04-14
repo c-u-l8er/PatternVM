@@ -26,7 +26,16 @@ defmodule PatternVM.DSL.Runtime do
     processed_steps = process_function_placeholders(steps)
 
     # Execute the workflow steps
-    execute_steps(processed_steps, initial_context)
+    do_execute_steps(processed_steps, initial_context)
+  end
+
+  # New function for testing purposes
+  def execute_workflow_steps(steps, context) do
+    case steps do
+      {:sequence, _} -> do_execute_steps(steps, context)
+      {:parallel, _} -> do_execute_steps(steps, context)
+      _ -> execute_step(steps, context)
+    end
   end
 
   # Process function placeholders to restore actual functions
@@ -115,7 +124,8 @@ defmodule PatternVM.DSL.Runtime do
     end)
   end
 
-  defp execute_steps({:sequence, steps}, context) do
+  # Renamed from execute_steps to do_execute_steps
+  defp do_execute_steps({:sequence, steps}, context) do
     Enum.reduce(steps, context, fn step, acc_context ->
       case execute_step(step, acc_context) do
         {:store, key, value} ->
@@ -127,7 +137,8 @@ defmodule PatternVM.DSL.Runtime do
     end)
   end
 
-  defp execute_steps({:parallel, steps}, context) do
+  # Renamed from execute_steps to do_execute_steps
+  defp do_execute_steps({:parallel, steps}, context) do
     # In a real implementation, this would execute steps concurrently
     # Here we just simulate it sequentially for demonstration
     results =
@@ -138,7 +149,8 @@ defmodule PatternVM.DSL.Runtime do
     Map.put(context, :parallel_results, results)
   end
 
-  defp execute_steps(single_step, context) when not is_list(single_step) do
+  # Renamed from execute_steps to do_execute_steps
+  defp do_execute_steps(single_step, context) when not is_list(single_step) do
     execute_step(single_step, context)
   end
 
@@ -171,11 +183,11 @@ defmodule PatternVM.DSL.Runtime do
   end
 
   defp execute_step({:sequence, _} = sequence, context) do
-    execute_steps(sequence, context)
+    do_execute_steps(sequence, context)
   end
 
   defp execute_step({:parallel, _} = parallel, context) do
-    execute_steps(parallel, context)
+    do_execute_steps(parallel, context)
   end
 
   # Handle :store operations differently to directly update the context
