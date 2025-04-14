@@ -10,26 +10,42 @@ defmodule PatternVM.DSL.StrategyTest do
     :ok
   end
 
-  # Define some strategy functions outside the DSL to avoid serialization issues
-  defmodule TestStrategies do
-    def discount_strategy(product) do
-      %{price: product.price * 0.9, name: product.name, discounted: true}
-    end
+  # Define strategy functions with proper reference format
+  def discount_strategy(product) do
+    %{price: product.price * 0.9, name: product.name, discounted: true}
+  end
 
-    def premium_strategy(product) do
-      %{price: product.price * 1.2, name: product.name, premium: true}
-    end
+  def premium_strategy(product) do
+    %{price: product.price * 1.2, name: product.name, premium: true}
+  end
+
+  # Define the double strategy function
+  def double_strategy(args) do
+    %{result: args.value * 2}
   end
 
   test "strategy pattern definition and execution" do
     defmodule StrategyExample do
       use PatternVM.DSL
+      import PatternVM.DSL.StrategyTest, only: []
 
-      # Define strategy pattern with strategies using MFA tuples
-      strategy(:pricing_strategy, %{
-        discount: {PatternVM.DSL.StrategyTest.TestStrategies, :discount_strategy, 1},
-        premium: {PatternVM.DSL.StrategyTest.TestStrategies, :premium_strategy, 1}
-      })
+      # Define strategy pattern with strategies using direct function references
+      # to avoid serialization issues
+      workflow(
+        :register_strategies,
+        sequence([
+          {:interact, :pricing_strategy, :register_strategy,
+           %{
+             name: :discount,
+             function: &PatternVM.DSL.StrategyTest.discount_strategy/1
+           }},
+          {:interact, :pricing_strategy, :register_strategy,
+           %{
+             name: :premium,
+             function: &PatternVM.DSL.StrategyTest.premium_strategy/1
+           }}
+        ])
+      )
 
       # Define workflow for applying discount strategy
       workflow(
@@ -48,8 +64,12 @@ defmodule PatternVM.DSL.StrategyTest do
       )
     end
 
-    # Execute definition
+    # Execute definition and register pattern
     StrategyExample.execute()
+    PatternVM.register_pattern(PatternVM.Strategy, %{name: :pricing_strategy})
+
+    # Register strategies first
+    PatternVM.DSL.Runtime.execute_workflow(StrategyExample, :register_strategies)
 
     # Test discount strategy
     result1 = PatternVM.DSL.Runtime.execute_workflow(StrategyExample, :apply_discount)
@@ -64,26 +84,18 @@ defmodule PatternVM.DSL.StrategyTest do
     assert result2.last_result.premium == true
   end
 
-  # Define the strategy function at module level
-  def double_strategy(args) do
-    %{result: args.value * 2}
-  end
-
   test "registering strategies at runtime" do
     defmodule RuntimeStrategyExample do
       use PatternVM.DSL
 
-      # Define empty strategy pattern
-      strategy(:runtime_strategy)
-
-      # Workflow to register a strategy with MFA tuple
+      # Define workflow to register a strategy
       workflow(
         :register_strategy,
         sequence([
           {:interact, :runtime_strategy, :register_strategy,
            %{
              name: :double,
-             function: {PatternVM.DSL.StrategyTest, :double_strategy, 1}
+             function: &PatternVM.DSL.StrategyTest.double_strategy/1
            }}
         ])
       )
@@ -99,6 +111,9 @@ defmodule PatternVM.DSL.StrategyTest do
 
     # Execute definition
     RuntimeStrategyExample.execute()
+
+    # Register the strategy pattern first
+    PatternVM.register_pattern(PatternVM.Strategy, %{name: :runtime_strategy})
 
     # Register the strategy
     PatternVM.DSL.Runtime.execute_workflow(RuntimeStrategyExample, :register_strategy)
