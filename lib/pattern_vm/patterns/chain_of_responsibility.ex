@@ -17,8 +17,8 @@ defmodule PatternVM.ChainOfResponsibility do
         state
       ) do
     # Extract parameters with support for both naming conventions
-    can_handle_fn = params[:can_handle] || params[:can_handle_fn]
-    handle_fn = params[:handle_fn] || params[:handle]
+    can_handle_fn = extract_function(params[:can_handle] || params[:can_handle_fn])
+    handle_fn = extract_function(params[:handle_fn] || params[:handle])
     priority = params[:priority] || 0
 
     handler = %{
@@ -42,6 +42,13 @@ defmodule PatternVM.ChainOfResponsibility do
 
     {:ok, handler, new_state}
   end
+
+  # Helper function to extract callable functions
+  defp extract_function(fun) when is_function(fun), do: fun
+  defp extract_function({mod, fun, 1}) when is_atom(mod) and is_atom(fun) do
+    fn arg -> apply(mod, fun, [arg]) end
+  end
+  defp extract_function(other), do: other
 
   def handle_interaction(:process_request, %{request: request}, state) do
     # Find a handler that can handle this request
