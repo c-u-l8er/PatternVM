@@ -292,8 +292,50 @@ defmodule PatternVM.DSL do
   end
 
   defmacro notify(topic, data) do
-    quote bind_quoted: [topic: topic, data: data] do
-      {:notify, topic, data}
+    # Convert maps to AST expressions that will be valid for macro traversal
+    quote do
+      data_expr = unquote(data_to_ast(data))
+      {:notify, unquote(topic), data_expr}
+    end
+  end
+
+  # Helper to convert data to AST that can be safely used in macros
+  defp data_to_ast(data) when is_map(data) do
+    # Convert map to keyword list for quoting
+    pairs = Enum.map(data, fn {k, v} -> {k, data_to_ast(v)} end)
+    quote do
+      Map.new([unquote_splicing(pairs)])
+    end
+  end
+
+  defp data_to_ast(data) when is_list(data) do
+    quoted_items = Enum.map(data, &data_to_ast/1)
+    quote do
+      [unquote_splicing(quoted_items)]
+    end
+  end
+
+  defp data_to_ast({:context, path}) when is_atom(path) do
+    quote do
+      {:context, unquote(path)}
+    end
+  end
+
+  defp data_to_ast({:context, key, path}) when is_atom(key) and is_atom(path) do
+    quote do
+      {:context, unquote(key), unquote(path)}
+    end
+  end
+
+  defp data_to_ast(data) when is_binary(data) or is_atom(data) or is_number(data) do
+    quote do
+      unquote(data)
+    end
+  end
+
+  defp data_to_ast(data) do
+    quote do
+      unquote(Macro.escape(data))
     end
   end
 

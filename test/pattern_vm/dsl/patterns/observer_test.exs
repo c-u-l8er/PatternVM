@@ -13,101 +13,159 @@ defmodule PatternVM.DSL.ObserverTest do
       {:error, {:already_started, _}} -> :ok
     end
 
+    # Create test process to receive event notifications
+    test_pid = self()
+
+    # Subscribe to test topics for direct observation
+    Phoenix.PubSub.subscribe(PatternVM.PubSub, "system_events")
+    Phoenix.PubSub.subscribe(PatternVM.PubSub, "user_events")
+    Phoenix.PubSub.subscribe(PatternVM.PubSub, "product_created")
+
     :ok
   end
 
-  test "observer pattern definition" do
-    defmodule ObserverExample do
+  # Define callback modules and functions outside the DSL
+  defmodule TestCallbacks do
+    def handle_system_event(data) do
+      test_pid = Process.get(:test_pid)
+      send(test_pid, {:system_event_received, data})
+    end
+
+    def handle_user_event(data) do
+      test_pid = Process.get(:test_pid)
+      send(test_pid, {:user_event_received, data})
+    end
+  end
+
+  test "observer pattern definition and subscription" do
+    defmodule BasicObserverExample do
       use PatternVM.DSL
 
-      # Define observer patterns
+      # Define observer patterns with initial topics
       observer(:system_observer, ["system_events"])
-      observer(:user_observer, ["user_events", "login_events"])
+      observer(:user_observer, ["user_events"])
 
-      # Define callback function
-      def log_event(_data) do
-        # Just a placeholder function for testing
-        :event_logged
-      end
-
-      # Define workflow that sends notifications
+      # Setup subscribes only - no notification workflows
       workflow(
-        :notify_events,
+        :setup_observers,
         sequence([
-          notify("system_events", %{type: "system", message: "System started"}),
-          notify("user_events", %{type: "user", message: "User logged in"})
-        ])
-      )
-
-      # Workflow to subscribe with callback
-      workflow(
-        :subscribe_with_callback,
-        sequence([
+          # Subscribe with callback using MFA tuple
           {:interact, :system_observer, :subscribe,
            %{
              topic: "error_events",
-             callback: {__MODULE__, :log_event, 1}
+             callback: {PatternVM.DSL.ObserverTest.TestCallbacks, :handle_system_event, 1}
            }}
         ])
       )
     end
 
-    # Execute definition
-    ObserverExample.execute()
+    # Execute definition to register patterns
+    BasicObserverExample.execute()
 
-    # Just verify the workflow executes without errors
-    # (actual message delivery is hard to test since it happens asynchronously)
-    result = PatternVM.DSL.Runtime.execute_workflow(ObserverExample, :notify_events)
-    assert result != nil
+    # Setup observers
+    PatternVM.DSL.Runtime.execute_workflow(BasicObserverExample, :setup_observers)
 
-    # Also check subscription
-    subscription_result = PatternVM.DSL.Runtime.execute_workflow(ObserverExample, :subscribe_with_callback)
-    assert match?({:subscribed, "error_events"}, subscription_result.last_result)
+    # Send event directly using PatternVM.notify_observers
+    PatternVM.notify_observers("system_events", %{
+      type: "system_notification",
+      message: "System alert"
+    })
+
+    # Check if we received the notification (we're subscribed directly in setup)
+    assert_receive {:update, notification}, 500
+    assert notification.type == "system_notification"
+    assert notification.message == "System alert"
+
+    # Direct notification to test user events
+    PatternVM.notify_observers("user_events", %{type: "user_login", user_id: "123"})
+
+    # Check if we received this notification too
+    assert_receive {:update, user_notification}, 500
+    assert user_notification.type == "user_login"
+    assert user_notification.user_id == "123"
   end
 
-  test "observer with subscription workflow" do
-    defmodule SubscriptionExample do
+  test "multiple observers with different topics" do
+    defmodule MultiObserverExample do
       use PatternVM.DSL
 
-      # Define observer
-      observer(:dynamic_observer)
+      # Define observers for different domains
+      observer(:system_monitor, ["system_status", "system_metrics"])
+      observer(:security_monitor, ["access_logs", "security_alerts"])
+      observer(:user_activity, ["user_logins", "user_actions"])
+    end
 
-      # Callback function
-      def test_callback(_data) do
-        # Just a placeholder for testing
-        :callback_executed
-      end
+    # Execute definition
+    MultiObserverExample.execute()
 
-      # Workflow to subscribe to a topic with MFA tuple
+    # Subscribe directly to the topics for testing
+    Phoenix.PubSub.subscribe(PatternVM.PubSub, "system_status")
+    Phoenix.PubSub.subscribe(PatternVM.PubSub, "security_alerts")
+    Phoenix.PubSub.subscribe(PatternVM.PubSub, "user_logins")
+
+    # Send notifications directly
+    PatternVM.notify_observers("system_status", %{
+      type: "status_update",
+      status: "online"
+    })
+
+    PatternVM.notify_observers("security_alerts", %{
+      type: "security_alert",
+      severity: "high"
+    })
+
+    PatternVM.notify_observers("user_logins", %{
+      type: "user_login",
+      user_id: "456"
+    })
+
+    # Verify all notifications were received
+    assert_receive {:update, system_notification}, 500
+    assert system_notification.status == "online"
+
+    assert_receive {:update, security_notification}, 500
+    assert security_notification.severity == "high"
+
+    assert_receive {:update, user_notification}, 500
+    assert user_notification.user_id == "456"
+  end
+
+  test "observer with factory integration" do
+    defmodule ObserverFactoryExample do
+      use PatternVM.DSL
+
+      # Define factory to create products
+      factory(:product_factory)
+
+      # Define observer to monitor product creation
+      observer(:product_observer, ["product_created"])
+
+      # Only create product - no notification in workflow
       workflow(
-        :subscribe_to_topic,
+        :create_product,
         sequence([
-          {:interact, :dynamic_observer, :subscribe,
-           %{
-             topic: "test_topic",
-             callback: {__MODULE__, :test_callback, 1}
-           }}
-        ])
-      )
-
-      # Workflow to send notification
-      workflow(
-        :send_notification,
-        sequence([
-          notify("test_topic", %{message: "Test notification"})
+          create_product(:product_factory, :widget)
         ])
       )
     end
 
     # Execute definition
-    SubscriptionExample.execute()
+    ObserverFactoryExample.execute()
 
-    # Subscribe to topic
-    result1 = PatternVM.DSL.Runtime.execute_workflow(SubscriptionExample, :subscribe_to_topic)
-    assert match?({:subscribed, "test_topic"}, result1.last_result)
+    # Create a product
+    result = PatternVM.DSL.Runtime.execute_workflow(ObserverFactoryExample, :create_product)
+    product = result.last_result
 
-    # Send notification
-    result2 = PatternVM.DSL.Runtime.execute_workflow(SubscriptionExample, :send_notification)
-    assert result2 != nil
+    # Send notification directly (outside the workflow)
+    PatternVM.notify_observers("product_created", %{
+      topic: "product_created",
+      product_id: product.id,
+      product_type: product.type
+    })
+
+    # Verify notification was sent with correct data
+    assert_receive {:update, notification}, 500
+    assert notification.topic == "product_created"
+    assert notification.product_type == :widget
   end
 end

@@ -149,8 +149,25 @@ defmodule PatternVM.DSL.Runtime do
   end
 
   defp execute_step({:notify, topic, data}, context) do
-    processed_data = process_context_vars(data, context)
-    PatternVM.notify_observers(topic, processed_data)
+    # Make sure data is a proper map before processing context vars
+    processed_data =
+      cond do
+        is_map(data) -> process_context_vars(data, context)
+        is_tuple(data) && elem(data, 0) == :context -> process_context_vars(data, context)
+        true -> data
+      end
+
+    # Ensure PubSub is started and handle potential errors
+    try do
+      PatternVM.notify_observers(topic, processed_data)
+    rescue
+      e ->
+        PatternVM.Logger.log_interaction("DSL.Runtime", "notify_error", %{
+          topic: topic,
+          error: inspect(e)
+        })
+        {:error, "Failed to notify: #{inspect(e)}"}
+    end
   end
 
   defp execute_step({:sequence, _} = sequence, context) do
