@@ -82,6 +82,11 @@ defmodule PatternVM.DSL.DecoratorTest do
       # Define empty decorator pattern
       decorator(:runtime_decorator)
 
+      # Simple function for our decorator
+      def uppercase_decorator(obj) do
+        Map.update(obj, :text, "", &String.upcase/1)
+      end
+
       # Workflow to register a decorator
       workflow(
         :register_decorator,
@@ -89,7 +94,8 @@ defmodule PatternVM.DSL.DecoratorTest do
           {:interact, :runtime_decorator, :register_decorator,
            %{
              name: :uppercase,
-             decorator_fn: {PatternVM.DSL.DecoratorTest, :uppercase_decorator, 1}
+             # Use a function reference instead of MFA tuple
+             decorator_fn: &__MODULE__.uppercase_decorator/1
            }}
         ])
       )
