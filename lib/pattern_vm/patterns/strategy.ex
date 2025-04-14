@@ -15,7 +15,17 @@ defmodule PatternVM.Strategy do
   def handle_interaction(:execute_strategy, %{name: name, args: args}, state) do
     case Map.fetch(state.strategies, name) do
       {:ok, strategy_fn} ->
-        result = apply(strategy_fn, [args])
+        result = try do
+          apply(strategy_fn, [args])
+        rescue
+          error ->
+            PatternVM.Logger.log_interaction("Strategy", "error", %{
+              error: "Error executing strategy",
+              strategy_name: name,
+              error_details: inspect(error)
+            })
+            {:error, "Error executing strategy: #{inspect(error)}"}
+        end
 
         PatternVM.Logger.log_interaction("Strategy", "execute", %{
           strategy_name: name,

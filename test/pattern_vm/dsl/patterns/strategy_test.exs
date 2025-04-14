@@ -24,12 +24,11 @@ defmodule PatternVM.DSL.StrategyTest do
   test "strategy pattern definition and execution" do
     defmodule StrategyExample do
       use PatternVM.DSL
-      import PatternVM.DSL.StrategyTest.TestStrategies, only: []
 
-      # Define strategy pattern with strategies
+      # Define strategy pattern with strategies using MFA tuples
       strategy(:pricing_strategy, %{
-        discount: &PatternVM.DSL.StrategyTest.TestStrategies.discount_strategy/1,
-        premium: &PatternVM.DSL.StrategyTest.TestStrategies.premium_strategy/1
+        discount: {PatternVM.DSL.StrategyTest.TestStrategies, :discount_strategy, 1},
+        premium: {PatternVM.DSL.StrategyTest.TestStrategies, :premium_strategy, 1}
       })
 
       # Define workflow for applying discount strategy
@@ -65,6 +64,11 @@ defmodule PatternVM.DSL.StrategyTest do
     assert result2.last_result.premium == true
   end
 
+  # Define the strategy function at module level
+  def double_strategy(args) do
+    %{result: args.value * 2}
+  end
+
   test "registering strategies at runtime" do
     defmodule RuntimeStrategyExample do
       use PatternVM.DSL
@@ -72,14 +76,14 @@ defmodule PatternVM.DSL.StrategyTest do
       # Define empty strategy pattern
       strategy(:runtime_strategy)
 
-      # Workflow to register a strategy
+      # Workflow to register a strategy with MFA tuple
       workflow(
         :register_strategy,
         sequence([
           {:interact, :runtime_strategy, :register_strategy,
            %{
              name: :double,
-             function: &PatternVM.DSL.StrategyTest.double_strategy/1
+             function: {PatternVM.DSL.StrategyTest, :double_strategy, 1}
            }}
         ])
       )
@@ -91,13 +95,6 @@ defmodule PatternVM.DSL.StrategyTest do
           execute_strategy(:runtime_strategy, :double, %{value: 5})
         ])
       )
-    end
-
-    # Define the strategy function
-    defmodule PatternVM.DSL.StrategyTest do
-      def double_strategy(args) do
-        %{result: args.value * 2}
-      end
     end
 
     # Execute definition

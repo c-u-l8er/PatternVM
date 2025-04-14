@@ -81,6 +81,7 @@ defmodule PatternVM.DSL do
       Module.register_attribute(__MODULE__, :patterns, accumulate: true)
       Module.register_attribute(__MODULE__, :interactions, accumulate: true)
       Module.register_attribute(__MODULE__, :workflows, accumulate: true)
+      Module.register_attribute(__MODULE__, :function_placeholders, accumulate: true)
       @before_compile PatternVM.DSL
     end
   end
@@ -96,7 +97,23 @@ defmodule PatternVM.DSL do
       end
 
       def get_workflows do
-        @workflows
+        # Store function placeholders for runtime
+        placeholders = @function_placeholders
+
+        # Replace placeholders with references to the stored functions
+        Enum.map(@workflows, fn {name, steps} ->
+          restored_steps = Macro.prewalk(steps, fn
+            {:__function_placeholder__, id} = placeholder ->
+              # Find the stored function for this placeholder
+              {^placeholder, func} = Enum.find(placeholders, fn {ph, _} -> ph == placeholder end)
+              # Return a special marker for the runtime to handle
+              {:__function__, id, Macro.escape(func)}
+            other ->
+              other
+          end)
+
+          {name, restored_steps}
+        end)
       end
 
       def execute do
@@ -106,47 +123,59 @@ defmodule PatternVM.DSL do
   end
 
   # Define a pattern with its configuration
-  defmacro pattern(name, type, config \\ quote(do: %{})) do
-    quote do
-      @patterns {unquote(name), unquote(type), unquote(config)}
+  defmacro pattern(name, type, config \\ Macro.escape(%{})) do
+    quote bind_quoted: [name: name, type: type, config: config] do
+      @patterns {name, type, config}
     end
   end
 
   # Define an interaction between patterns
   defmacro interaction(from_pattern, action, to_pattern, result_handler \\ nil) do
-    quote do
-      @interactions {unquote(from_pattern), unquote(action), unquote(to_pattern),
-                     unquote(result_handler)}
+    quote bind_quoted: [from_pattern: from_pattern, action: action, to_pattern: to_pattern, result_handler: result_handler] do
+      @interactions {from_pattern, action, to_pattern, result_handler}
     end
   end
 
   # Define a workflow of pattern interactions
   defmacro workflow(name, steps) do
-    quote do
-      @workflows {unquote(name), unquote(steps)}
+    quote bind_quoted: [name: name, steps: steps] do
+      # Convert any anonymous functions to safe representations
+      safe_steps = Macro.prewalk(steps, fn
+        # Match anonymous functions and convert to placeholders
+        {:fn, _, _} = func ->
+          # Create a unique placeholder for this function
+          placeholder = {:__function_placeholder__, System.unique_integer([:positive])}
+          # Store function in module attribute for later retrieval
+          Module.put_attribute(__MODULE__, :function_placeholders, {placeholder, func})
+          placeholder
+        other ->
+          other
+      end)
+
+      @workflows {name, safe_steps}
     end
   end
 
   # Store operation
   defmacro store(key, value) do
-    quote do
-      {:store, unquote(key), unquote(value)}
+    quote bind_quoted: [key: key, value: value] do
+      {:store, key, value}
     end
   end
 
   # Transform operation
   defmacro transform(key, value) do
-    quote do
-      {:transform, unquote(key), unquote(value)}
+    quote bind_quoted: [key: key, value: value] do
+      {:transform, key, value}
     end
   end
 
   defmacro transform(key, source_key, transform_fn) do
-    quote do
-      {:transform, unquote(key),
+    quote bind_quoted: [key: key, source_key: source_key, transform_fn: transform_fn] do
+      {:transform, key,
        fn ctx ->
-         source_value = Map.get(ctx, unquote(source_key))
-         unquote(transform_fn).(source_value)
+         source_value = Map.get(ctx, source_key)
+         transform_fn.(source_value)
        end}
     end
   end
@@ -154,102 +183,90 @@ defmodule PatternVM.DSL do
   # Pattern-specific DSL constructs
 
   # Singleton Pattern
-  defmacro singleton(name, config \\ quote(do: %{})) do
-    quote do
-      pattern(unquote(name), :singleton, unquote(config))
+  defmacro singleton(name, config \\ Macro.escape(%{})) do
+    quote bind_quoted: [name: name, config: config] do
+      pattern(name, :singleton, config)
     end
   end
 
   # Factory Pattern
-  defmacro factory(name, products \\ [], config \\ quote(do: %{})) do
-    quote do
-      pattern_config = Map.merge(unquote(config), %{products: unquote(products)})
-      pattern(unquote(name), :factory, pattern_config)
+  defmacro factory(name, products \\ [], config \\ Macro.escape(%{})) do
+    quote bind_quoted: [name: name, products: products, config: config] do
+      pattern_config = Map.merge(config, %{products: products})
+      pattern(name, :factory, pattern_config)
     end
   end
 
   # Observer Pattern
-  defmacro observer(name, topics \\ [], config \\ quote(do: %{})) do
-    quote do
-      pattern_config = Map.merge(unquote(config), %{topics: unquote(topics)})
-      pattern(unquote(name), :observer, pattern_config)
+  defmacro observer(name, topics \\ []) do
+    quote bind_quoted: [name: name, topics: topics] do
+      pattern_config = %{topics: topics}
+      pattern(name, :observer, pattern_config)
     end
   end
 
   # Builder Pattern
-  defmacro builder(name, parts \\ [], config \\ quote(do: %{})) do
-    quote do
-      pattern_config = Map.merge(unquote(config), %{available_parts: unquote(parts)})
-      pattern(unquote(name), :builder, pattern_config)
+  defmacro builder(name, parts \\ [], config \\ Macro.escape(%{})) do
+    quote bind_quoted: [name: name, parts: parts, config: config] do
+      pattern_config = Map.merge(config, %{available_parts: parts})
+      pattern(name, :builder, pattern_config)
     end
   end
 
   # Strategy Pattern
-  defmacro strategy(name, strategies \\ quote(do: %{}), config \\ quote(do: %{})) do
-    quote bind_quoted: [name: name, strategies: strategies, config: config] do
-      pattern_config = Map.merge(config, %{strategies: strategies})
+  defmacro strategy(name, strategies \\ Macro.escape(%{})) do
+    quote bind_quoted: [name: name, strategies: strategies] do
+      pattern_config = %{strategies: strategies}
       pattern(name, :strategy, pattern_config)
     end
   end
 
   # Adapter Pattern
-  defmacro adapter(name, adapters \\ quote(do: %{}), config \\ quote(do: %{})) do
-    quote bind_quoted: [name: name, adapters: adapters, config: config] do
-      pattern_config = Map.merge(config, %{adapters: adapters})
+  defmacro adapter(name, adapters \\ Macro.escape(%{})) do
+    quote bind_quoted: [name: name, adapters: adapters] do
+      pattern_config = %{adapters: adapters}
       pattern(name, :adapter, pattern_config)
     end
   end
 
   # Command Pattern
-  defmacro command(name, commands \\ quote(do: %{}), config \\ quote(do: %{})) do
-    quote bind_quoted: [name: name, commands: commands, config: config] do
-      pattern_config = Map.merge(config, %{commands: commands})
+  defmacro command(name, commands \\ Macro.escape(%{})) do
+    quote bind_quoted: [name: name, commands: commands] do
+      pattern_config = %{commands: commands}
       pattern(name, :command, pattern_config)
     end
   end
 
   # Decorator Pattern
-  defmacro decorator(name, decorators \\ quote(do: %{}), config \\ quote(do: %{})) do
-    quote bind_quoted: [name: name, decorators: decorators, config: config] do
-      pattern_config = Map.merge(config, %{decorators: decorators})
+  defmacro decorator(name, decorators \\ Macro.escape(%{})) do
+    quote bind_quoted: [name: name, decorators: decorators] do
+      pattern_config = %{decorators: decorators}
       pattern(name, :decorator, pattern_config)
     end
   end
 
   # Composite Pattern
-  defmacro composite(name, config \\ quote(do: %{})) do
-    quote do
-      pattern(unquote(name), :composite, unquote(config))
+  defmacro composite(name, config \\ Macro.escape(%{})) do
+    quote bind_quoted: [name: name, config: config] do
+      pattern(name, :composite, config)
     end
   end
 
   # Proxy Pattern
-  defmacro proxy(
-             name,
-             services \\ quote(do: %{}),
-             access_rules \\ quote(do: %{}),
-             config \\ quote(do: %{})
-           ) do
-    quote bind_quoted: [
-            name: name,
-            services: services,
-            access_rules: access_rules,
-            config: config
-          ] do
-      pattern_config =
-        Map.merge(config, %{
-          services: services,
-          access_rules: access_rules
-        })
-
+  defmacro proxy(name, services \\ Macro.escape(%{}), access_rules \\ Macro.escape(%{})) do
+    quote bind_quoted: [name: name, services: services, access_rules: access_rules] do
+      pattern_config = %{
+        services: services,
+        access_rules: access_rules
+      }
       pattern(name, :proxy, pattern_config)
     end
   end
 
   # Chain of Responsibility Pattern
-  defmacro chain_of_responsibility(name, handlers \\ quote(do: []), config \\ quote(do: %{})) do
-    quote bind_quoted: [name: name, handlers: handlers, config: config] do
-      pattern_config = Map.merge(config, %{handlers: handlers})
+  defmacro chain_of_responsibility(name, handlers \\ []) do
+    quote bind_quoted: [name: name, handlers: handlers] do
+      pattern_config = %{handlers: handlers}
       pattern(name, :chain_of_responsibility, pattern_config)
     end
   end
@@ -258,145 +275,145 @@ defmodule PatternVM.DSL do
 
   # Factory actions
   defmacro create_product(factory_name, product_type) do
-    quote do
-      {:interact, unquote(factory_name), :create_product, %{type: unquote(product_type)}}
+    quote bind_quoted: [factory_name: factory_name, product_type: product_type] do
+      {:interact, factory_name, :create_product, %{type: product_type}}
     end
   end
 
   # Observer actions
   defmacro subscribe(observer_name, topic) do
-    quote do
-      {:interact, unquote(observer_name), :subscribe,
+    quote bind_quoted: [observer_name: observer_name, topic: topic] do
+      {:interact, observer_name, :subscribe,
        %{
-         topic: unquote(topic),
+         topic: topic,
          callback: fn _ -> :ok end
        }}
     end
   end
 
   defmacro notify(topic, data) do
-    quote do
-      {:notify, unquote(topic), unquote(data)}
+    quote bind_quoted: [topic: topic, data: data] do
+      {:notify, topic, data}
     end
   end
 
   # Builder actions
-  defmacro build_product(builder_name, name, parts, metadata \\ quote(do: %{})) do
-    quote do
-      {:interact, unquote(builder_name), :build_step_by_step,
+  defmacro build_product(builder_name, name, parts, metadata \\ Macro.escape(%{})) do
+    quote bind_quoted: [builder_name: builder_name, name: name, parts: parts, metadata: metadata] do
+      {:interact, builder_name, :build_step_by_step,
        %{
-         name: unquote(name),
-         parts: unquote(parts),
-         metadata: unquote(metadata)
+         name: name,
+         parts: parts,
+         metadata: metadata
        }}
     end
   end
 
   # Strategy actions
   defmacro execute_strategy(strategy_name, name, args) do
-    quote do
-      {:interact, unquote(strategy_name), :execute_strategy,
+    quote bind_quoted: [strategy_name: strategy_name, name: name, args: args] do
+      {:interact, strategy_name, :execute_strategy,
        %{
-         name: unquote(name),
-         args: unquote(args)
+         name: name,
+         args: args
        }}
     end
   end
 
   # Adapter actions
   defmacro adapt(adapter_name, object, to_type) do
-    quote do
-      {:interact, unquote(adapter_name), :adapt,
+    quote bind_quoted: [adapter_name: adapter_name, object: object, to_type: to_type] do
+      {:interact, adapter_name, :adapt,
        %{
-         object: unquote(object),
-         to_type: unquote(to_type)
+         object: object,
+         to_type: to_type
        }}
     end
   end
 
   # Command actions
   defmacro execute_command(command_name, command, args) do
-    quote do
-      {:interact, unquote(command_name), :execute,
+    quote bind_quoted: [command_name: command_name, command: command, args: args] do
+      {:interact, command_name, :execute,
        %{
-         command: unquote(command),
-         args: unquote(args)
+         command: command,
+         args: args
        }}
     end
   end
 
   defmacro undo_command(command_name) do
-    quote do
-      {:interact, unquote(command_name), :undo, %{}}
+    quote bind_quoted: [command_name: command_name] do
+      {:interact, command_name, :undo, %{}}
     end
   end
 
   # Decorator actions
   defmacro decorate(decorator_name, object, decorators) do
-    quote do
-      {:interact, unquote(decorator_name), :decorate,
+    quote bind_quoted: [decorator_name: decorator_name, object: object, decorators: decorators] do
+      {:interact, decorator_name, :decorate,
        %{
-         object: unquote(object),
-         decorators: unquote(decorators)
+         object: object,
+         decorators: decorators
        }}
     end
   end
 
   # Composite actions
-  defmacro create_component(composite_name, id, name, type, data \\ quote(do: %{})) do
-    quote do
-      {:interact, unquote(composite_name), :create_component,
+  defmacro create_component(composite_name, id, name, type, data \\ Macro.escape(%{})) do
+    quote bind_quoted: [composite_name: composite_name, id: id, name: name, type: type, data: data] do
+      {:interact, composite_name, :create_component,
        %{
-         id: unquote(id),
-         name: unquote(name),
-         type: unquote(type),
-         data: unquote(data)
+         id: id,
+         name: name,
+         type: type,
+         data: data
        }}
     end
   end
 
   defmacro add_child(composite_name, parent_id, child_id) do
-    quote do
-      {:interact, unquote(composite_name), :add_child,
+    quote bind_quoted: [composite_name: composite_name, parent_id: parent_id, child_id: child_id] do
+      {:interact, composite_name, :add_child,
        %{
-         parent_id: unquote(parent_id),
-         child_id: unquote(child_id)
+         parent_id: parent_id,
+         child_id: child_id
        }}
     end
   end
 
   # Proxy actions
-  defmacro proxy_request(proxy_name, service, args, context \\ quote(do: %{})) do
-    quote do
-      {:interact, unquote(proxy_name), :request,
+  defmacro proxy_request(proxy_name, service, args, context \\ Macro.escape(%{})) do
+    quote bind_quoted: [proxy_name: proxy_name, service: service, args: args, context: context] do
+      {:interact, proxy_name, :request,
        %{
-         service: unquote(service),
-         args: unquote(args),
-         context: unquote(context)
+         service: service,
+         args: args,
+         context: context
        }}
     end
   end
 
   # Chain of Responsibility actions
   defmacro process_request(chain_name, request) do
-    quote do
-      {:interact, unquote(chain_name), :process_request,
+    quote bind_quoted: [chain_name: chain_name, request: request] do
+      {:interact, chain_name, :process_request,
        %{
-         request: unquote(request)
+         request: request
        }}
     end
   end
 
   # Workflow control
   defmacro sequence(steps) do
-    quote do
-      {:sequence, unquote(steps)}
+    quote bind_quoted: [steps: steps] do
+      {:sequence, steps}
     end
   end
 
   defmacro parallel(steps) do
-    quote do
-      {:parallel, unquote(steps)}
+    quote bind_quoted: [steps: steps] do
+      {:parallel, steps}
     end
   end
 end

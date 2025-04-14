@@ -24,12 +24,30 @@ defmodule PatternVM.DSL.ObserverTest do
       observer(:system_observer, ["system_events"])
       observer(:user_observer, ["user_events", "login_events"])
 
+      # Define callback function
+      def log_event(_data) do
+        # Just a placeholder function for testing
+        :event_logged
+      end
+
       # Define workflow that sends notifications
       workflow(
         :notify_events,
         sequence([
           notify("system_events", %{type: "system", message: "System started"}),
           notify("user_events", %{type: "user", message: "User logged in"})
+        ])
+      )
+
+      # Workflow to subscribe with callback
+      workflow(
+        :subscribe_with_callback,
+        sequence([
+          {:interact, :system_observer, :subscribe,
+           %{
+             topic: "error_events",
+             callback: {__MODULE__, :log_event, 1}
+           }}
         ])
       )
     end
@@ -41,6 +59,10 @@ defmodule PatternVM.DSL.ObserverTest do
     # (actual message delivery is hard to test since it happens asynchronously)
     result = PatternVM.DSL.Runtime.execute_workflow(ObserverExample, :notify_events)
     assert result != nil
+
+    # Also check subscription
+    subscription_result = PatternVM.DSL.Runtime.execute_workflow(ObserverExample, :subscribe_with_callback)
+    assert match?({:subscribed, "error_events"}, subscription_result.last_result)
   end
 
   test "observer with subscription workflow" do
@@ -50,11 +72,21 @@ defmodule PatternVM.DSL.ObserverTest do
       # Define observer
       observer(:dynamic_observer)
 
-      # Workflow to subscribe to a topic
+      # Callback function
+      def test_callback(_data) do
+        # Just a placeholder for testing
+        :callback_executed
+      end
+
+      # Workflow to subscribe to a topic with MFA tuple
       workflow(
         :subscribe_to_topic,
         sequence([
-          subscribe(:dynamic_observer, "test_topic")
+          {:interact, :dynamic_observer, :subscribe,
+           %{
+             topic: "test_topic",
+             callback: {__MODULE__, :test_callback, 1}
+           }}
         ])
       )
 
@@ -71,10 +103,11 @@ defmodule PatternVM.DSL.ObserverTest do
     SubscriptionExample.execute()
 
     # Subscribe to topic
-    PatternVM.DSL.Runtime.execute_workflow(SubscriptionExample, :subscribe_to_topic)
+    result1 = PatternVM.DSL.Runtime.execute_workflow(SubscriptionExample, :subscribe_to_topic)
+    assert match?({:subscribed, "test_topic"}, result1.last_result)
 
     # Send notification
-    result = PatternVM.DSL.Runtime.execute_workflow(SubscriptionExample, :send_notification)
-    assert result != nil
+    result2 = PatternVM.DSL.Runtime.execute_workflow(SubscriptionExample, :send_notification)
+    assert result2 != nil
   end
 end

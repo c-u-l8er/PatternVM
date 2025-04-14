@@ -25,7 +25,6 @@ defmodule PatternVM.DSL.ChainOfResponsibilityTest do
   test "chain of responsibility pattern definition and request handling" do
     defmodule ChainExample do
       use PatternVM.DSL
-      import PatternVM.DSL.ChainOfResponsibilityTest.TestHandlers, only: []
 
       # Define chain of responsibility
       chain_of_responsibility(:error_chain)
@@ -34,33 +33,30 @@ defmodule PatternVM.DSL.ChainOfResponsibilityTest do
       workflow(
         :register_handlers,
         sequence([
-          # Register validation handler
+          # Register validation handler with MFA tuples
           {:interact, :error_chain, :register_handler,
            %{
              name: :validation_handler,
-             can_handle_fn:
-               &PatternVM.DSL.ChainOfResponsibilityTest.TestHandlers.can_handle_validation/1,
-             handle_fn: &PatternVM.DSL.ChainOfResponsibilityTest.TestHandlers.handle_validation/1,
+             can_handle_fn: {PatternVM.DSL.ChainOfResponsibilityTest.TestHandlers, :can_handle_validation, 1},
+             handle_fn: {PatternVM.DSL.ChainOfResponsibilityTest.TestHandlers, :handle_validation, 1},
              priority: 10
            }},
 
-          # Register database handler
+          # Register database handler with MFA tuples
           {:interact, :error_chain, :register_handler,
            %{
              name: :database_handler,
-             can_handle_fn:
-               &PatternVM.DSL.ChainOfResponsibilityTest.TestHandlers.can_handle_database/1,
-             handle_fn: &PatternVM.DSL.ChainOfResponsibilityTest.TestHandlers.handle_database/1,
+             can_handle_fn: {PatternVM.DSL.ChainOfResponsibilityTest.TestHandlers, :can_handle_database, 1},
+             handle_fn: {PatternVM.DSL.ChainOfResponsibilityTest.TestHandlers, :handle_database, 1},
              priority: 20
            }},
 
-          # Register network handler
+          # Register network handler with MFA tuples
           {:interact, :error_chain, :register_handler,
            %{
              name: :network_handler,
-             can_handle_fn:
-               &PatternVM.DSL.ChainOfResponsibilityTest.TestHandlers.can_handle_network/1,
-             handle_fn: &PatternVM.DSL.ChainOfResponsibilityTest.TestHandlers.handle_network/1,
+             can_handle_fn: {PatternVM.DSL.ChainOfResponsibilityTest.TestHandlers, :can_handle_network, 1},
+             handle_fn: {PatternVM.DSL.ChainOfResponsibilityTest.TestHandlers, :handle_network, 1},
              priority: 30
            }}
         ])
@@ -128,37 +124,43 @@ defmodule PatternVM.DSL.ChainOfResponsibilityTest do
 
       chain_of_responsibility(:multi_chain)
 
+      # Handler functions
+      def always_handle(_), do: true
+      def low_priority_handler(_), do: "Low priority handler"
+      def medium_priority_handler(_), do: "Medium priority handler"
+      def high_priority_handler(_), do: "High priority handler"
+
       # Workflow to register handlers that can handle the same request type
       workflow(
         :register_conflicting_handlers,
         sequence([
-          # Low priority handler
+          # Low priority handler with MFA tuples
           {:interact, :multi_chain, :register_handler,
            %{
              name: :low_priority,
              # Handles everything
-             can_handle_fn: fn _ -> true end,
-             handle_fn: fn _ -> "Low priority handler" end,
+             can_handle_fn: {__MODULE__, :always_handle, 1},
+             handle_fn: {__MODULE__, :low_priority_handler, 1},
              priority: 10
            }},
 
-          # Medium priority handler
+          # Medium priority handler with MFA tuples
           {:interact, :multi_chain, :register_handler,
            %{
              name: :medium_priority,
              # Handles everything
-             can_handle_fn: fn _ -> true end,
-             handle_fn: fn _ -> "Medium priority handler" end,
+             can_handle_fn: {__MODULE__, :always_handle, 1},
+             handle_fn: {__MODULE__, :medium_priority_handler, 1},
              priority: 50
            }},
 
-          # High priority handler
+          # High priority handler with MFA tuples
           {:interact, :multi_chain, :register_handler,
            %{
              name: :high_priority,
              # Handles everything
-             can_handle_fn: fn _ -> true end,
-             handle_fn: fn _ -> "High priority handler" end,
+             can_handle_fn: {__MODULE__, :always_handle, 1},
+             handle_fn: {__MODULE__, :high_priority_handler, 1},
              priority: 100
            }}
         ])

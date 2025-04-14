@@ -108,7 +108,7 @@ defmodule PatternVM.DSLTest do
        [
          # Create a product
          {:interact, :factory, :create_product, %{type: :widget}},
-         # Print type to console (side effect)
+         # Create another product
          {:interact, :factory, :create_product, %{type: :gadget}}
        ]})
     end
@@ -122,6 +122,9 @@ defmodule PatternVM.DSLTest do
     # Last result should be a gadget
     assert result.last_result.type == :gadget
   end
+
+  # Define transform functions at the module level
+  def transform_widget(widget), do: %{widget | name: "Transformed Widget"}
 
   test "sequence macro works correctly" do
     defmodule SequenceMacroTest do

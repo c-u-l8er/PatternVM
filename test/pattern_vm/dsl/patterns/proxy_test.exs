@@ -26,18 +26,16 @@ defmodule PatternVM.DSL.ProxyTest do
   test "proxy pattern definition and request handling" do
     defmodule ProxyExample do
       use PatternVM.DSL
-      import PatternVM.DSL.ProxyTest.TestServices, only: []
-      import PatternVM.DSL.ProxyTest.AccessRules, only: []
 
-      # Define proxy with services and access rules
+      # Define proxy with services and access rules using MFA tuples
       proxy(
         :user_proxy,
         %{
-          get_user: &PatternVM.DSL.ProxyTest.TestServices.get_user/1,
-          update_user: &PatternVM.DSL.ProxyTest.TestServices.update_user/1
+          get_user: {PatternVM.DSL.ProxyTest.TestServices, :get_user, 1},
+          update_user: {PatternVM.DSL.ProxyTest.TestServices, :update_user, 1}
         },
         %{
-          update_user: &PatternVM.DSL.ProxyTest.AccessRules.admin_only/2
+          update_user: {PatternVM.DSL.ProxyTest.AccessRules, :admin_only, 2}
         }
       )
 
@@ -91,16 +89,18 @@ defmodule PatternVM.DSL.ProxyTest do
     defmodule ProxyCachingExample do
       use PatternVM.DSL
 
-      # Define proxy with a service
+      # Define expensive operation function
+      def expensive_operation(id) do
+        %{
+          id: id,
+          result: "Expensive result for #{id}",
+          timestamp: :os.system_time(:millisecond)
+        }
+      end
+
+      # Define proxy with a service using MFA tuple
       proxy(:cache_proxy, %{
-        expensive_operation: fn id ->
-          # This would normally be expensive, but here we just return a value
-          %{
-            id: id,
-            result: "Expensive result for #{id}",
-            timestamp: :os.system_time(:millisecond)
-          }
-        end
+        expensive_operation: {__MODULE__, :expensive_operation, 1}
       })
 
       # Define workflow that calls the same service twice
@@ -138,8 +138,5 @@ defmodule PatternVM.DSL.ProxyTest do
     # Third call should have same data but different timestamp
     assert result.third_call.id == "test"
     assert result.third_call.result == result.first_call.result
-
-    # Due to test execution speed, the timestamps might be the same in rare cases,
-    # so we can't reliably test that timestamp changed
   end
 end

@@ -14,20 +14,30 @@ defmodule PatternVM.DSL.CombinedPatternsTest do
     defmodule CombinedExample do
       use PatternVM.DSL
 
-      # Define various patterns
+      # Define adapter functions
+      def format_to_json(product) do
+        "{\"id\":\"#{product.id}\",\"type\":\"#{product.type}\"}"
+      end
+
+      # Define decorator functions
+      def premium_decorator(product) do
+        Map.put(product, :quality, "premium")
+      end
+
+      def discount_decorator(product) do
+        Map.update(product, :price, 100, fn price -> price * 0.9 end)
+      end
+
+      # Define various patterns with MFA tuples
       factory(:product_factory)
 
       adapter(:format_adapter, %{
-        to_json: fn product ->
-          "{\"id\":\"#{product.id}\",\"type\":\"#{product.type}\"}"
-        end
+        to_json: {__MODULE__, :format_to_json, 1}
       })
 
       decorator(:product_decorator, %{
-        premium: fn product -> Map.put(product, :quality, "premium") end,
-        discount: fn product ->
-          Map.update(product, :price, 100, fn price -> price * 0.9 end)
-        end
+        premium: {__MODULE__, :premium_decorator, 1},
+        discount: {__MODULE__, :discount_decorator, 1}
       })
 
       observer(:notification_observer, ["product_events"])
@@ -79,6 +89,28 @@ defmodule PatternVM.DSL.CombinedPatternsTest do
     defmodule ComplexInteractionExample do
       use PatternVM.DSL
 
+      # Define handler functions
+      def send_request(req) do
+        %{
+          id: req.id,
+          status: 200,
+          response: %{success: true, data: "Response data"}
+        }
+      end
+
+      def execute_request_fn(req) do
+        # Use proxy to send request
+        PatternVM.interact(:api_proxy, :request, %{
+          service: :send_request,
+          args: req,
+          context: %{authorized: true}
+        })
+      end
+
+      def undo_request_fn(_) do
+        %{cancelled: true}
+      end
+
       # Define patterns
       singleton(:config, %{instance: %{api_url: "https://api.example.com", timeout: 5000}})
       factory(:request_factory)
@@ -107,28 +139,15 @@ defmodule PatternVM.DSL.CombinedPatternsTest do
           {:interact, :api_proxy, :register_service,
            %{
              name: :send_request,
-             handler: fn req ->
-               %{
-                 id: req.id,
-                 status: 200,
-                 response: %{success: true, data: "Response data"}
-               }
-             end
+             handler: {__MODULE__, :send_request, 1}
            }},
 
           # Register command
           {:interact, :request_commands, :register_command,
            %{
              name: :execute_request,
-             execute_fn: fn req ->
-               # Use proxy to send request
-               PatternVM.interact(:api_proxy, :request, %{
-                 service: :send_request,
-                 args: req,
-                 context: %{authorized: true}
-               })
-             end,
-             undo_fn: fn _ -> %{cancelled: true} end
+             execute_fn: {__MODULE__, :execute_request_fn, 1},
+             undo_fn: {__MODULE__, :undo_request_fn, 1}
            }},
 
           # Execute the request via command

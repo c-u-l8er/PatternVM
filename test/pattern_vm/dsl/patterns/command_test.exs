@@ -22,17 +22,16 @@ defmodule PatternVM.DSL.CommandTest do
   test "command pattern definition and execution" do
     defmodule CommandExample do
       use PatternVM.DSL
-      import PatternVM.DSL.CommandTest.TestCommands, only: []
 
-      # Define command pattern with commands
+      # Define command pattern with commands using MFA tuples
       command(:calculator, %{
         add: %{
-          execute: &PatternVM.DSL.CommandTest.TestCommands.add/1,
-          undo: &PatternVM.DSL.CommandTest.TestCommands.undo_add/1
+          execute: {PatternVM.DSL.CommandTest.TestCommands, :add, 1},
+          undo: {PatternVM.DSL.CommandTest.TestCommands, :undo_add, 1}
         },
         multiply: %{
-          execute: &PatternVM.DSL.CommandTest.TestCommands.multiply/1,
-          undo: &PatternVM.DSL.CommandTest.TestCommands.undo_multiply/1
+          execute: {PatternVM.DSL.CommandTest.TestCommands, :multiply, 1},
+          undo: {PatternVM.DSL.CommandTest.TestCommands, :undo_multiply, 1}
         }
       })
 
@@ -85,17 +84,22 @@ defmodule PatternVM.DSL.CommandTest do
   test "command history and multiple undos" do
     defmodule CommandHistoryExample do
       use PatternVM.DSL
-      import PatternVM.DSL.CommandTest.TestCommands, only: []
 
-      # Define calculator with commands
+      # Define command functions
+      def create_fn(args), do: %{created: args.name}
+      def delete_fn(args), do: %{deleted: args.name}
+      def update_fn(args), do: %{updated: args.name, value: args.value}
+      def revert_fn(args), do: %{reverted: args.name}
+
+      # Define calculator with commands using MFA tuples
       command(:multi_calculator, %{
-        add: %{
-          execute: &PatternVM.DSL.CommandTest.TestCommands.add/1,
-          undo: &PatternVM.DSL.CommandTest.TestCommands.undo_add/1
+        create: %{
+          execute: {__MODULE__, :create_fn, 1},
+          undo: {__MODULE__, :delete_fn, 1}
         },
-        multiply: %{
-          execute: &PatternVM.DSL.CommandTest.TestCommands.multiply/1,
-          undo: &PatternVM.DSL.CommandTest.TestCommands.undo_multiply/1
+        update: %{
+          execute: {__MODULE__, :update_fn, 1},
+          undo: {__MODULE__, :revert_fn, 1}
         }
       })
 
@@ -104,22 +108,22 @@ defmodule PatternVM.DSL.CommandTest do
         :multiple_operations,
         sequence([
           # Execute first command
-          execute_command(:multi_calculator, :add, %{a: 5, b: 3}),
-          {:store, :add_result, :last_result},
+          execute_command(:multi_calculator, :create, %{name: "item1"}),
+          {:store, :create_result, :last_result},
 
           # Execute second command
-          execute_command(:multi_calculator, :multiply, %{a: 2, b: 4}),
-          {:store, :multiply_result, :last_result},
+          execute_command(:multi_calculator, :update, %{name: "item1", value: "new value"}),
+          {:store, :update_result, :last_result},
 
           # Get history
           {:interact, :multi_calculator, :get_history, %{}},
           {:store, :history, :last_result},
 
-          # Undo last command (multiply)
+          # Undo last command (update)
           undo_command(:multi_calculator),
           {:store, :first_undo, :last_result},
 
-          # Undo first command (add)
+          # Undo first command (create)
           undo_command(:multi_calculator),
           {:store, :second_undo, :last_result}
         ])
@@ -133,14 +137,14 @@ defmodule PatternVM.DSL.CommandTest do
     result = PatternVM.DSL.Runtime.execute_workflow(CommandHistoryExample, :multiple_operations)
 
     # Check command results
-    assert result.add_result.result == 8
-    assert result.multiply_result.result == 8
+    assert result.create_result.created == "item1"
+    assert result.update_result.updated == "item1"
 
     # Check history - should have 2 commands
     assert length(result.history) == 2
 
     # Check undo results
-    assert result.first_undo.message =~ "Undid multiplication"
-    assert result.second_undo.message =~ "Undid addition"
+    assert result.first_undo.reverted == "item1"
+    assert result.second_undo.deleted == "item1"
   end
 end

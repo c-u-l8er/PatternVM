@@ -4,9 +4,21 @@ defmodule PatternVM.Adapter do
   def pattern_name, do: :adapter
 
   def initialize(config) do
+    adapters =
+      config
+      |> Map.get(:adapters, %{})
+      |> Enum.map(fn
+        # Convert MFA tuples to actual functions
+        {key, {mod, fun, arity}} when is_atom(mod) and is_atom(fun) and is_integer(arity) ->
+          {key, fn arg -> apply(mod, fun, [arg]) end}
+        {key, value} ->
+          {key, value}
+      end)
+      |> Enum.into(%{})
+
     {:ok,
      %{
-       adapters: Map.get(config, :adapters, %{}),
+       adapters: adapters,
        name: Map.get(config, :name, :adapter)
      }}
   end

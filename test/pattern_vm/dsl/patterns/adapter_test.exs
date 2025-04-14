@@ -28,10 +28,10 @@ defmodule PatternVM.DSL.AdapterTest do
       use PatternVM.DSL
       import PatternVM.DSL.AdapterTest.TestAdapters, only: []
 
-      # Define adapter pattern with adapters
+      # Define adapter pattern with adapters using MFA tuples
       adapter(:format_adapter, %{
-        string_to_integer: &PatternVM.DSL.AdapterTest.TestAdapters.string_to_integer/1,
-        list_to_map: &PatternVM.DSL.AdapterTest.TestAdapters.list_to_map/1
+        string_to_integer: {PatternVM.DSL.AdapterTest.TestAdapters, :string_to_integer, 1},
+        list_to_map: {PatternVM.DSL.AdapterTest.TestAdapters, :list_to_map, 1}
       })
 
       # Define workflow to adapt string to integer
@@ -77,7 +77,7 @@ defmodule PatternVM.DSL.AdapterTest do
           {:interact, :runtime_adapter, :register_adapter,
            %{
              for_type: :uppercase,
-             adapter_fn: &String.upcase/1
+             adapter_fn: {__MODULE__, :uppercase, 1}
            }}
         ])
       )
@@ -111,14 +111,19 @@ defmodule PatternVM.DSL.AdapterTest do
       # Define factory to create products
       factory(:product_factory)
 
-      # Define adapter for product transformation
+      # Define product adapter functions
+      def to_json(product) do
+        "{\"id\":\"#{product.id}\",\"type\":\"#{product.type}\"}"
+      end
+
+      def to_tuple(product) do
+        {product.type, product.id}
+      end
+
+      # Define adapter for product transformation with MFA tuples
       adapter(:product_adapter, %{
-        to_json: fn product ->
-          "{\"id\":\"#{product.id}\",\"type\":\"#{product.type}\"}"
-        end,
-        to_tuple: fn product ->
-          {product.type, product.id}
-        end
+        to_json: {__MODULE__, :to_json, 1},
+        to_tuple: {__MODULE__, :to_tuple, 1}
       })
 
       # Workflow to create and adapt a product

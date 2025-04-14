@@ -22,8 +22,23 @@ defmodule PatternVM.DSL.Runtime do
     {^workflow_name, steps} =
       Enum.find(module.get_workflows(), fn {name, _} -> name == workflow_name end)
 
+    # Process any function placeholders
+    processed_steps = process_function_placeholders(steps)
+
     # Execute the workflow steps
-    execute_steps(steps, initial_context)
+    execute_steps(processed_steps, initial_context)
+  end
+
+  # Process function placeholders to restore actual functions
+  defp process_function_placeholders(data) do
+    Macro.prewalk(data, fn
+      # When we find a function marker, convert it to an actual function
+      {:__function__, _id, func_ast} ->
+        {func, _} = Code.eval_quoted(func_ast, [], __ENV__)
+        func
+      other ->
+        other
+    end)
   end
 
   # Private implementation
@@ -45,6 +60,9 @@ defmodule PatternVM.DSL.Runtime do
   end
 
   defp register_pattern_by_type(name, type, config) do
+    # Transform any function references in config
+    processed_config = process_function_refs(config)
+
     module =
       case type do
         :singleton -> PatternVM.Singleton
@@ -62,9 +80,23 @@ defmodule PatternVM.DSL.Runtime do
       end
 
     # Register with config including name
-    config_with_name = Map.put(config, :name, name)
+    config_with_name = Map.put(processed_config, :name, name)
     PatternVM.register_pattern(module, config_with_name)
   end
+
+  # Handle function references represented as MFA tuples
+  defp process_function_refs(config) when is_map(config) do
+    Enum.map(config, fn
+      {k, {mod, fun, arity}} when is_atom(mod) and is_atom(fun) and is_integer(arity) ->
+        {k, fn arg -> apply(mod, fun, [arg]) end}
+      {k, v} when is_map(v) ->
+        {k, process_function_refs(v)}
+      pair ->
+        pair
+    end)
+    |> Enum.into(%{})
+  end
+  defp process_function_refs(value), do: value
 
   defp setup_interactions(interactions) do
     Enum.each(interactions, fn {from, action, to, handler} ->

@@ -28,13 +28,12 @@ defmodule PatternVM.DSL.DecoratorTest do
   test "decorator pattern definition and usage" do
     defmodule DecoratorExample do
       use PatternVM.DSL
-      import PatternVM.DSL.DecoratorTest.TestDecorators, only: []
 
-      # Define decorator pattern with decorators
+      # Define decorator pattern with decorators using MFA tuples
       decorator(:component_decorator, %{
-        logger: &PatternVM.DSL.DecoratorTest.TestDecorators.add_logger/1,
-        cache: &PatternVM.DSL.DecoratorTest.TestDecorators.add_cache/1,
-        metrics: &PatternVM.DSL.DecoratorTest.TestDecorators.add_metrics/1
+        logger: {PatternVM.DSL.DecoratorTest.TestDecorators, :add_logger, 1},
+        cache: {PatternVM.DSL.DecoratorTest.TestDecorators, :add_cache, 1},
+        metrics: {PatternVM.DSL.DecoratorTest.TestDecorators, :add_metrics, 1}
       })
 
       # Define workflow for applying single decorator
@@ -71,6 +70,11 @@ defmodule PatternVM.DSL.DecoratorTest do
     assert result2.last_result.metrics == true
   end
 
+  # Define uppercase decorator function at module level
+  def uppercase_decorator(obj) do
+    Map.update(obj, :text, "", &String.upcase/1)
+  end
+
   test "registering decorators at runtime" do
     defmodule RuntimeDecoratorExample do
       use PatternVM.DSL
@@ -85,7 +89,7 @@ defmodule PatternVM.DSL.DecoratorTest do
           {:interact, :runtime_decorator, :register_decorator,
            %{
              name: :uppercase,
-             decorator_fn: &PatternVM.DSL.DecoratorTest.uppercase_decorator/1
+             decorator_fn: {PatternVM.DSL.DecoratorTest, :uppercase_decorator, 1}
            }}
         ])
       )
@@ -97,13 +101,6 @@ defmodule PatternVM.DSL.DecoratorTest do
           decorate(:runtime_decorator, %{text: "hello world"}, [:uppercase])
         ])
       )
-    end
-
-    # Define the decorator function
-    defmodule PatternVM.DSL.DecoratorTest do
-      def uppercase_decorator(obj) do
-        Map.update(obj, :text, "", &String.upcase/1)
-      end
     end
 
     # Execute definition
@@ -121,11 +118,16 @@ defmodule PatternVM.DSL.DecoratorTest do
     defmodule DecoratorOrderExample do
       use PatternVM.DSL
 
-      # Define decorator pattern with sequential transformations
+      # Define functions for decorators
+      def add_prefix(text), do: "PREFIX: " <> text
+      def add_suffix(text), do: text <> " :SUFFIX"
+      def emphasize(text), do: "*** " <> text <> " ***"
+
+      # Define decorator pattern with sequential transformations using MFA tuples
       decorator(:text_decorator, %{
-        add_prefix: fn text -> "PREFIX: " <> text end,
-        add_suffix: fn text -> text <> " :SUFFIX" end,
-        emphasize: fn text -> "*** " <> text <> " ***" end
+        add_prefix: {__MODULE__, :add_prefix, 1},
+        add_suffix: {__MODULE__, :add_suffix, 1},
+        emphasize: {__MODULE__, :emphasize, 1}
       })
 
       # Apply decorators in one order
