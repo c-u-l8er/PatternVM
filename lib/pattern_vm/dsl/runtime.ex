@@ -87,10 +87,16 @@ defmodule PatternVM.DSL.Runtime do
   # Handle function references represented as MFA tuples
   defp process_function_refs(config) when is_map(config) do
     Enum.map(config, fn
-      {k, {mod, fun, arity}} when is_atom(mod) and is_atom(fun) and is_integer(arity) ->
+      # Handle access rules differently (they need arity 2)
+      {k, {mod, fun, 2}} when is_atom(mod) and is_atom(fun) ->
+        {k, fn arg1, arg2 -> apply(mod, fun, [arg1, arg2]) end}
+      # Regular case for arity 1
+      {k, {mod, fun, 1}} when is_atom(mod) and is_atom(fun) ->
         {k, fn arg -> apply(mod, fun, [arg]) end}
+      # Recurse for nested maps
       {k, v} when is_map(v) ->
         {k, process_function_refs(v)}
+      # Pass through other values
       pair ->
         pair
     end)
@@ -198,6 +204,11 @@ defmodule PatternVM.DSL.Runtime do
     value =
       context |> Map.get(key_head) |> Map.get(key_tail) |> Map.get(key_more) |> Map.get(key_last)
 
+    {:store, key, value}
+  end
+
+  defp execute_step({:transform, key, source}, context) do
+    value = process_context_vars(source, context)
     {:store, key, value}
   end
 

@@ -18,7 +18,7 @@ defmodule PatternVM.ChainOfResponsibility do
       ) do
     # Extract parameters with support for both naming conventions
     can_handle_fn = params[:can_handle] || params[:can_handle_fn]
-    handle_fn = params[:handle] || params[:handle_fn]
+    handle_fn = params[:handle_fn] || params[:handle]
     priority = params[:priority] || 0
 
     handler = %{

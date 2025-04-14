@@ -15,7 +15,12 @@ defmodule PatternVM.Composite do
     end
 
     def add_child(%__MODULE__{} = component, %__MODULE__{} = child) do
-      %{component | children: [child | component.children]}
+      # Make sure we're not adding duplicates
+      if find_child(component, child.id) do
+        component
+      else
+        %{component | children: [child | component.children]}
+      end
     end
 
     def remove_child(%__MODULE__{} = component, child_id) do
@@ -58,16 +63,23 @@ defmodule PatternVM.Composite do
   def handle_interaction(:add_child, %{parent_id: parent_id, child_id: child_id}, state) do
     with {:ok, parent} <- Map.fetch(state.composites, parent_id),
          {:ok, child} <- Map.fetch(state.composites, child_id) do
-      updated_parent = Component.add_child(parent, child)
-      updated_composites = Map.put(state.composites, parent_id, updated_parent)
-      new_state = %{state | composites: updated_composites}
+      # Check if child is already a child of parent to avoid duplicates
+      if Component.find_child(parent, child_id) do
+        # Child is already a child of parent
+        {:ok, parent, state}
+      else
+        # Add child to parent
+        updated_parent = Component.add_child(parent, child)
+        updated_composites = Map.put(state.composites, parent_id, updated_parent)
+        new_state = %{state | composites: updated_composites}
 
-      PatternVM.Logger.log_interaction("Composite", "add_child", %{
-        parent_id: parent_id,
-        child_id: child_id
-      })
+        PatternVM.Logger.log_interaction("Composite", "add_child", %{
+          parent_id: parent_id,
+          child_id: child_id
+        })
 
-      {:ok, updated_parent, new_state}
+        {:ok, updated_parent, new_state}
+      end
     else
       :error ->
         missing =
