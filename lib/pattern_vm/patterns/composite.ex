@@ -15,8 +15,8 @@ defmodule PatternVM.Composite do
     end
 
     def add_child(%__MODULE__{} = component, %__MODULE__{} = child) do
-      # Make sure we're not adding duplicates
-      if find_child(component, child.id) do
+      # Avoid adding duplicates by checking if child already exists
+      if Enum.any?(component.children, fn c -> c.id == child.id end) do
         component
       else
         %{component | children: [child | component.children]}
@@ -63,23 +63,17 @@ defmodule PatternVM.Composite do
   def handle_interaction(:add_child, %{parent_id: parent_id, child_id: child_id}, state) do
     with {:ok, parent} <- Map.fetch(state.composites, parent_id),
          {:ok, child} <- Map.fetch(state.composites, child_id) do
-      # Check if child is already a child of parent to avoid duplicates
-      if Component.find_child(parent, child_id) do
-        # Child is already a child of parent
-        {:ok, parent, state}
-      else
-        # Add child to parent
-        updated_parent = Component.add_child(parent, child)
-        updated_composites = Map.put(state.composites, parent_id, updated_parent)
-        new_state = %{state | composites: updated_composites}
+      # Add child to parent
+      updated_parent = Component.add_child(parent, child)
+      updated_composites = Map.put(state.composites, parent_id, updated_parent)
+      new_state = %{state | composites: updated_composites}
 
-        PatternVM.Logger.log_interaction("Composite", "add_child", %{
-          parent_id: parent_id,
-          child_id: child_id
-        })
+      PatternVM.Logger.log_interaction("Composite", "add_child", %{
+        parent_id: parent_id,
+        child_id: child_id
+      })
 
-        {:ok, updated_parent, new_state}
-      end
+      {:ok, updated_parent, new_state}
     else
       :error ->
         missing =
@@ -103,8 +97,11 @@ defmodule PatternVM.Composite do
   def handle_interaction(:get_component, %{id: id}, state) do
     case Map.fetch(state.composites, id) do
       {:ok, component} ->
+        # Deep copy with full component objects in children
+        component_with_children = deep_copy_component(component, state.composites)
+
         PatternVM.Logger.log_interaction("Composite", "get_component", %{id: id})
-        {:ok, component, state}
+        {:ok, component_with_children, state}
 
       :error ->
         PatternVM.Logger.log_interaction("Composite", "error", %{
@@ -113,6 +110,19 @@ defmodule PatternVM.Composite do
 
         {:error, "Component not found: #{id}", state}
     end
+  end
+
+  # Recursively build the full component tree
+  defp deep_copy_component(component, all_components) do
+    children = Enum.map(component.children, fn child ->
+      child_id = child.id
+      case Map.fetch(all_components, child_id) do
+        {:ok, full_child} -> deep_copy_component(full_child, all_components)
+        :error -> child  # Fallback if child isn't found (shouldn't happen)
+      end
+    end)
+
+    %{component | children: children}
   end
 
   def handle_interaction(:remove_component, %{id: id}, state) do
