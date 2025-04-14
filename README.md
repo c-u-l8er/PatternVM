@@ -20,6 +20,8 @@ Read the following for more details:
 - ./prompts/pattern_ecosystems.md
 - ./prompts/pattern_concurrency.md
 - ./WHITEPAPER.md
+- ./CASE_STUDY.md
+- ./BUSINESS_PLAN.md
 
 ## Examples
 Demo:

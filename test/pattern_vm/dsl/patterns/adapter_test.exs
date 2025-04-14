@@ -70,6 +70,11 @@ defmodule PatternVM.DSL.AdapterTest do
       # Define empty adapter pattern
       adapter(:runtime_adapter)
 
+      # Define the uppercase function
+      def uppercase(text) do
+        String.upcase(text)
+      end
+
       # Workflow to register an adapter
       workflow(
         :register_adapter,
@@ -77,7 +82,7 @@ defmodule PatternVM.DSL.AdapterTest do
           {:interact, :runtime_adapter, :register_adapter,
            %{
              for_type: :uppercase,
-             adapter_fn: {__MODULE__, :uppercase, 1}
+             adapter_fn: &__MODULE__.uppercase/1  # Use function reference instead of MFA tuple
            }}
         ])
       )
