@@ -242,9 +242,9 @@ defmodule PatternVM.DSL.Runtime do
   end
 
   defp process_context_vars(params, context) when is_map(params) do
-    Enum.reduce(params, %{}, fn {k, v}, acc ->
-      Map.put(acc, k, process_context_vars(v, context))
-    end)
+    params
+    |> Enum.map(fn {k, v} -> {k, process_context_vars(v, context)} end)
+    |> Enum.into(%{})
   end
 
   defp process_context_vars({:context, key}, context) do

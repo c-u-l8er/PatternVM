@@ -158,8 +158,17 @@ defmodule PatternVM.DSL do
 
   # Store operation
   defmacro store(key, value) do
-    quote bind_quoted: [key: key, value: value] do
-      {:store, key, value}
+    safe_value = case value do
+      # If it's a map with context references, convert to keyword list
+      %{} = map ->
+        map_to_kwlist = Enum.map(map, fn {k, v} -> {k, v} end)
+        quote do: Map.new(unquote(map_to_kwlist))
+      # Otherwise pass through
+      other -> other
+    end
+
+    quote do
+      {:store, unquote(key), unquote(safe_value)}
     end
   end
 
@@ -292,10 +301,9 @@ defmodule PatternVM.DSL do
   end
 
   defmacro notify(topic, data) do
-    # Convert maps to AST expressions that will be valid for macro traversal
     quote do
-      data_expr = unquote(data_to_ast(data))
-      {:notify, unquote(topic), data_expr}
+      # Delay all processing to runtime
+      {:notify, unquote(topic), unquote(Macro.escape(data))}
     end
   end
 
