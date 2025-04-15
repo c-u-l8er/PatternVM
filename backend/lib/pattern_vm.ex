@@ -174,4 +174,41 @@ defmodule PatternVM do
 
     {:reply, visualization, state}
   end
+
+  def handle_call(:get_patterns, _from, state) do
+    patterns = Enum.map(state.patterns, fn {name, {module, _state}} ->
+      %{
+        name: name,
+        type: module.pattern_name()
+      }
+    end)
+    {:reply, patterns, state}
+  end
+
+  def handle_call({:get_pattern, pattern_name}, _from, state) do
+    case Map.fetch(state.patterns, pattern_name) do
+      {:ok, {module, pattern_state}} ->
+        pattern_info = %{
+          name: pattern_name,
+          type: module.pattern_name(),
+          state: pattern_state
+        }
+        {:reply, {:ok, pattern_info}, state}
+      :error ->
+        {:reply, {:error, :not_found}, state}
+    end
+  end
+
+  def get_registered_patterns do
+    GenServer.call(__MODULE__, :get_patterns)
+  end
+
+  def get_pattern(pattern_name) do
+    pattern_name_atom =
+      case pattern_name do
+        name when is_atom(name) -> name
+        name when is_binary(name) -> String.to_atom(name)
+      end
+    GenServer.call(__MODULE__, {:get_pattern, pattern_name_atom})
+  end
 end

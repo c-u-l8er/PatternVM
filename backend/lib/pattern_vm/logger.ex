@@ -19,6 +19,16 @@ defmodule PatternVM.Logger do
     # Broadcast the log event through PubSub for visualization
     try do
       PatternVM.PubSub.broadcast(
+        "pattern_events:#{source}",
+        {:pattern_event, %{
+          source: source,
+          action: action,
+          data: data,
+          timestamp: DateTime.utc_now()
+        }}
+      )
+
+      PatternVM.PubSub.broadcast(
         "pattern_logs",
         {:log,
          %{

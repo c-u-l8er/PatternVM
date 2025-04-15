@@ -15,6 +15,10 @@ defmodule PatternVMWeb.Endpoint do
     websocket: [connect_info: [session: @session_options]],
     longpoll: [connect_info: [session: @session_options]]
 
+  socket "/socket", PatternVMWeb.UserSocket,
+    websocket: true,
+    longpoll: false
+
   # Serve at "/" the static files from "priv/static" directory.
   #
   # When code reloading is disabled (e.g., in production),
@@ -51,4 +55,11 @@ defmodule PatternVMWeb.Endpoint do
   plug Plug.Head
   plug Plug.Session, @session_options
   plug PatternVMWeb.Router
+
+  plug Corsica,
+    origins: ["*"],
+    allow_headers: ["accept", "content-type", "authorization"],
+    allow_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_credentials: true,
+    log: [rejected: :error, invalid: :warn, accepted: :debug]
 end

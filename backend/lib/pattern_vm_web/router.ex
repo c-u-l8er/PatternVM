@@ -20,10 +20,15 @@ defmodule PatternVMWeb.Router do
     get "/", PageController, :home
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", PatternVMWeb do
-  #   pipe_through :api
-  # end
+  scope "/api", PatternVMWeb.API do
+    pipe_through :api
+
+    resources "/patterns", PatternController, except: [:new, :edit]
+    resources "/workflows", WorkflowController, except: [:new, :edit]
+    post "/interact", InteractionController, :interact
+    post "/workflows/:name/execute", WorkflowController, :execute
+    get "/visualization", VisualizationController, :index
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:pattern_vm, :dev_routes) do

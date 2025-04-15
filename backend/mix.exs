@@ -61,7 +61,8 @@ defmodule PatternVM.MixProject do
       {:bandit, "~> 1.5"},
       {:uuid, "~> 1.1"},
       {:meck, "~> 0.9", only: :test},
-      {:phoenix_pubsub, "~> 2.1"}
+      {:phoenix_pubsub, "~> 2.1"},
+      {:corsica, "~> 1.0"}
     ]
   end
 
